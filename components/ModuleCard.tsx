@@ -12,6 +12,11 @@ interface ModuleCardProps {
   toggleFavorite: (id: number) => void;
   onEdit: (module: Module) => void;
   onDelete: (id: number) => void;
+  translations: {
+    confirmDelete: string;
+    edit: string;
+    delete: string;
+  };
 }
 
 const DynamicHeroIcon = ({ icon }: { icon: string | null }) => {
@@ -26,7 +31,7 @@ const DynamicHeroIcon = ({ icon }: { icon: string | null }) => {
 };
 
 
-const ModuleCard: React.FC<ModuleCardProps> = ({ module, language, isFavorite, toggleFavorite, onEdit, onDelete }) => {
+const ModuleCard: React.FC<ModuleCardProps> = ({ module, language, isFavorite, toggleFavorite, onEdit, onDelete, translations }) => {
   const { profile } = useAuth();
   const isAdmin = profile?.role === 'admin';
 
@@ -47,7 +52,7 @@ const ModuleCard: React.FC<ModuleCardProps> = ({ module, language, isFavorite, t
   const handleDelete = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if(window.confirm('Are you sure you want to delete this module?')) {
+    if(window.confirm(translations.confirmDelete)) {
         onDelete(module.id);
     }
   }
@@ -91,14 +96,14 @@ const ModuleCard: React.FC<ModuleCardProps> = ({ module, language, isFavorite, t
              <button 
                 onClick={handleEdit}
                 className="p-1 rounded-full bg-white text-gray-400 hover:bg-blue-100 hover:text-blue-500 transition-colors shadow"
-                aria-label={'Edit module'}
+                aria-label={translations.edit}
             >
                 <HeroIcons.PencilIcon className="h-4 w-4" />
             </button>
             <button 
                 onClick={handleDelete}
                 className="p-1 rounded-full bg-white text-gray-400 hover:bg-red-100 hover:text-red-500 transition-colors shadow"
-                aria-label={'Delete module'}
+                aria-label={translations.delete}
             >
                 <HeroIcons.TrashIcon className="h-4 w-4" />
             </button>

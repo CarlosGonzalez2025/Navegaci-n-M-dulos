@@ -100,12 +100,16 @@ export default function Dashboard() {
     setIsModalOpen(false);
   };
 
-  const handleSaveModule = async (module: Omit<Module, 'id' | 'created_at'>) => {
+  const handleSaveModule = async (module: Omit<Module, 'id' | 'created_at' | 'updated_at'>) => {
     try {
         if (editingModule) { // Update
-            const { data, error } = await supabase
+            const updatePayload = {
+                ...module,
+                updated_at: new Date().toISOString(),
+            };
+            const { error, data } = await supabase
                 .from('modules')
-                .update(module)
+                .update(updatePayload)
                 .eq('id', editingModule.id)
                 .select()
                 .single();
@@ -133,8 +137,10 @@ export default function Dashboard() {
         const { error } = await supabase.from('modules').delete().eq('id', moduleId);
         if (error) throw error;
         setAllModules(allModules.filter(m => m.id !== moduleId));
-    } catch (error) {
+    } catch (error: any) {
         console.error("Failed to delete module", error);
+        const errorMessage = error.message || 'An unknown error occurred.';
+        alert(`Failed to delete module: ${errorMessage}`);
     }
   }
 

@@ -14,6 +14,9 @@ interface ModuleGridProps {
     noFavorites: string;
     noModules: string;
     addModule: string;
+    confirmDelete: string;
+    edit: string;
+    delete: string;
   };
   activeTab: Category;
   onEdit: (module: Module) => void;
@@ -69,6 +72,7 @@ const ModuleGrid: React.FC<ModuleGridProps> = ({
             toggleFavorite={toggleFavorite}
             onEdit={onEdit}
             onDelete={onDelete}
+            translations={translations}
           />
         ))}
       </div>

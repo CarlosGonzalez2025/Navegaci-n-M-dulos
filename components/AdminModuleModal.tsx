@@ -5,7 +5,7 @@ import { Category } from '../types';
 interface AdminModuleModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (module: Omit<Module, 'id' | 'created_at'>) => void;
+  onSave: (module: Omit<Module, 'id' | 'created_at' | 'updated_at'>) => void;
   module: Module | null;
   translations: any;
 }
@@ -52,16 +52,18 @@ const AdminModuleModal: React.FC<AdminModuleModalProps> = ({ isOpen, onClose, on
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const { description, icon, ...rest } = formData;
+    // FIX: The type of `formData.category` is inferred as the general `Category` enum,
+    // which is wider than what the `onSave` prop expects. Since the form only
+    // allows valid categories to be selected, we can safely cast it to the
+    // more specific type required by the Module interface.
+    const { description, icon, category, ...rest } = formData;
     const modulePayload = {
       ...rest,
+      category: category as Exclude<Category, Category.Favorites | Category.Admin>,
       description: description || null,
       icon: icon || null,
     };
-    // The state's category type is widened to `string` by the generic `handleChange`,
-    // so we cast it to the specific type required by the Module interface.
-    // This is safe because the select input only contains valid category options.
-    onSave(modulePayload as Omit<Module, 'id' | 'created_at'>);
+    onSave(modulePayload);
   };
 
   if (!isOpen) return null;
