@@ -6,6 +6,8 @@ export const translations = {
     companyName: 'Sistema de Gestión Integrada',
     welcomeMessage: 'Bienvenido al portal de aplicaciones',
     logout: 'Cerrar sesión',
+    changePassword: 'Cambiar contraseña',
+    userMenu: 'Menú de usuario',
     
     // Navegación
     applications: 'Aplicaciones',
@@ -41,6 +43,8 @@ export const translations = {
     userName: 'Nombre completo',
     userEmail: 'Correo electrónico',
     userPassword: 'Contraseña',
+    newPassword: 'Nueva contraseña',
+    confirmPassword: 'Confirmar nueva contraseña',
     userRole: 'Rol',
     userCompany: 'Empresa',
     userDepartment: 'Departamento',
@@ -84,7 +88,8 @@ export const translations = {
     invalidEmail: 'Correo electrónico no válido',
     invalidUrl: 'URL no válida',
     passwordMinLength: 'La contraseña debe tener al menos 6 caracteres',
-    
+    passwordsDoNotMatch: 'Las contraseñas no coinciden',
+
     // Mensajes
     loading: 'Cargando...',
     saving: 'Guardando...',
@@ -95,6 +100,7 @@ export const translations = {
     userCreatedSuccess: 'Usuario creado exitosamente',
     userUpdatedSuccess: 'Usuario actualizado exitosamente',
     userDeletedSuccess: 'Usuario eliminado exitosamente',
+    passwordUpdatedSuccess: 'Contraseña actualizada exitosamente',
     
     // Filtros
     allRoles: 'Todos los roles',
@@ -112,7 +118,11 @@ export const translations = {
     
     // Favoritos
     addToFavorites: 'Añadir a favoritos',
-    removeFromFavorites: 'Quitar de favoritos'
+    removeFromFavorites: 'Quitar de favoritos',
+
+    // Footer
+    footerRights: 'Todos los derechos reservados.',
+    footerDevelopedBy: 'Desarrollado por'
   },
   
   [Language.EN]: {
@@ -120,7 +130,9 @@ export const translations = {
     companyName: 'Integrated Management System',
     welcomeMessage: 'Welcome to the application portal',
     logout: 'Sign out',
-    
+    changePassword: 'Change Password',
+    userMenu: 'User Menu',
+
     // Navigation
     applications: 'Applications',
     reports: 'Reports',
@@ -155,6 +167,8 @@ export const translations = {
     userName: 'Full name',
     userEmail: 'Email',
     userPassword: 'Password',
+    newPassword: 'New Password',
+    confirmPassword: 'Confirm New Password',
     userRole: 'Role',
     userCompany: 'Company',
     userDepartment: 'Department',
@@ -198,7 +212,8 @@ export const translations = {
     invalidEmail: 'Invalid email',
     invalidUrl: 'Invalid URL',
     passwordMinLength: 'Password must be at least 6 characters',
-    
+    passwordsDoNotMatch: 'Passwords do not match',
+
     // Messages
     loading: 'Loading...',
     saving: 'Saving...',
@@ -209,6 +224,7 @@ export const translations = {
     userCreatedSuccess: 'User created successfully',
     userUpdatedSuccess: 'User updated successfully',
     userDeletedSuccess: 'User deleted successfully',
+    passwordUpdatedSuccess: 'Password updated successfully',
     
     // Filters
     allRoles: 'All roles',
@@ -226,7 +242,11 @@ export const translations = {
     
     // Favorites
     addToFavorites: 'Add to favorites',
-    removeFromFavorites: 'Remove from favorites'
+    removeFromFavorites: 'Remove from favorites',
+    
+    // Footer
+    footerRights: 'All rights reserved.',
+    footerDevelopedBy: 'Developed by'
   },
   
   [Language.ZH]: {
@@ -234,7 +254,9 @@ export const translations = {
     companyName: '综合管理系统',
     welcomeMessage: '欢迎使用应用程序门户',
     logout: '登出',
-    
+    changePassword: '更改密码',
+    userMenu: '用户菜单',
+
     // 导航
     applications: '应用程序',
     reports: '报告',
@@ -269,6 +291,8 @@ export const translations = {
     userName: '全名',
     userEmail: '电子邮件',
     userPassword: '密码',
+    newPassword: '新密码',
+    confirmPassword: '确认新密码',
     userRole: '角色',
     userCompany: '公司',
     userDepartment: '部门',
@@ -312,7 +336,8 @@ export const translations = {
     invalidEmail: '无效的电子邮件',
     invalidUrl: '无效的网址',
     passwordMinLength: '密码至少需要6个字符',
-    
+    passwordsDoNotMatch: '密码不匹配',
+
     // 消息
     loading: '加载中...',
     saving: '保存中...',
@@ -323,6 +348,7 @@ export const translations = {
     userCreatedSuccess: '用户创建成功',
     userUpdatedSuccess: '用户更新成功',
     userDeletedSuccess: '用户删除成功',
+    passwordUpdatedSuccess: '密码更新成功',
     
     // 筛选器
     allRoles: '所有角色',
@@ -340,6 +366,10 @@ export const translations = {
     
     // 收藏夹
     addToFavorites: '添加到收藏夹',
-    removeFromFavorites: '从收藏夹中删除'
+    removeFromFavorites: '从收藏夹中删除',
+    
+    // Footer
+    footerRights: '版权所有.',
+    footerDevelopedBy: '开发者'
   }
 };

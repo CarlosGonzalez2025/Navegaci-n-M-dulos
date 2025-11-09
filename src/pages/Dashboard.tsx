@@ -8,6 +8,7 @@ import ModuleGrid from '../components/ModuleGrid';
 import UserManagement from '../components/UserManagement';
 import AdminModuleModal from '../components/AdminModuleModal';
 import ConfirmDeleteModal from '../components/ConfirmDeleteModal';
+import ChangePasswordModal from '../components/ChangePasswordModal'; // Import the new modal
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -24,6 +25,9 @@ export default function Dashboard() {
   const [editingModule, setEditingModule] = useState<Module | null>(null);
   const [deletingModule, setDeletingModule] = useState<Module | null>(null);
   const [isOperationLoading, setIsOperationLoading] = useState(false);
+  
+  // State for the new change password modal
+  const [isChangePasswordModalOpen, setIsChangePasswordModalOpen] = useState(false);
 
   const currentTranslations = translations[language];
 
@@ -176,8 +180,8 @@ export default function Dashboard() {
     } catch (err: any) {
       console.error("Failed to save module", err);
       let message = err?.message || JSON.stringify(err);
-      if (message === '{}') {
-        message = String(err);
+      if (message === '{}' || message.includes('[object Object]')) {
+          message = err.toString();
       }
       alert(`Error al guardar módulo: ${message}`);
     } finally {
@@ -214,8 +218,8 @@ export default function Dashboard() {
     } catch (error: any) {
       console.error("Failed to delete module", error);
       let message = error?.message || JSON.stringify(error);
-      if (message === '{}') {
-        message = String(error);
+      if (message === '{}' || message.includes('[object Object]')) {
+          message = error.toString();
       }
       alert(`Error al eliminar módulo: ${message}`);
     } finally {
@@ -223,6 +227,27 @@ export default function Dashboard() {
       setDeletingModule(null);
     }
   };
+
+  // Handler for changing password
+  const handleChangePassword = async (newPassword: string) => {
+    setIsOperationLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      alert(currentTranslations.passwordUpdatedSuccess);
+      setIsChangePasswordModalOpen(false);
+    } catch (err: any) {
+      console.error("Failed to update password", err);
+      let message = err?.message || JSON.stringify(err);
+      if (message === '{}' || message.includes('[object Object]')) {
+          message = err.toString();
+      }
+      alert(`Error: ${message}`);
+    } finally {
+      setIsOperationLoading(false);
+    }
+  };
+
 
   // Render content based on active tab
   const renderContent = () => {
@@ -282,11 +307,12 @@ export default function Dashboard() {
 
   return (
     <>
-      <div className="min-h-screen bg-gray-50 text-gray-800 flex justify-center p-4 sm:p-6 lg:p-8">
+      <div className="min-h-screen bg-gray-50 text-gray-800 flex flex-col items-center p-4 sm:p-6 lg:p-8">
         <div className="w-full max-w-7xl">
           <Header 
             language={language} 
-            setLanguage={setLanguage} 
+            setLanguage={setLanguage}
+            onOpenChangePasswordModal={() => setIsChangePasswordModalOpen(true)}
             translations={currentTranslations} 
           />
           <main className="mt-6 bg-white shadow-sm border border-gray-200 rounded-lg">
@@ -297,6 +323,14 @@ export default function Dashboard() {
             />
             {renderContent()}
           </main>
+          <footer className="text-center py-4 mt-4">
+            <p className="text-xs text-gray-500">
+              {`© ${new Date().getFullYear()} China Harbour Engineering Company. ${currentTranslations.footerRights}`}
+            </p>
+            <p className="text-xs text-gray-500 mt-1">
+              {currentTranslations.footerDevelopedBy} <a href="https://www.datenova.io" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.datenova.io</a>
+            </p>
+          </footer>
         </div>
       </div>
       
@@ -320,6 +354,17 @@ export default function Dashboard() {
           moduleName={getModuleName(deletingModule, language)}
           translations={currentTranslations}
           isLoading={isOperationLoading}
+        />
+      )}
+      
+      {/* Modal para cambio de contraseña */}
+      {isChangePasswordModalOpen && (
+        <ChangePasswordModal
+          isOpen={isChangePasswordModalOpen}
+          onClose={() => setIsChangePasswordModalOpen(false)}
+          onSave={handleChangePassword}
+          isLoading={isOperationLoading}
+          translations={currentTranslations}
         />
       )}
     </>

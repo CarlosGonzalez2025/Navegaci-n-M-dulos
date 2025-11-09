@@ -4,26 +4,17 @@ import { supabase } from '../lib/supabase';
 const LoginPage: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-    setMessage(null);
 
     try {
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-      } else {
-        const { error } = await supabase.auth.signUp({ email, password });
-        if (error) throw error;
-        setMessage('Registration successful! Please check your email to verify your account.');
-      }
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
     } catch (err: any) {
       setError(err.message || 'An unexpected error occurred.');
     } finally {
@@ -39,10 +30,10 @@ const LoginPage: React.FC = () => {
         </div>
         <div className="bg-white p-8 rounded-lg shadow-md border border-gray-200">
           <h2 className="text-2xl font-bold text-center text-gray-800 mb-1">
-            {isLogin ? 'Welcome Back' : 'Create Account'}
+            Welcome Back
           </h2>
           <p className="text-center text-gray-500 mb-6">
-            {isLogin ? 'Sign in to access your dashboard' : 'Get started with a new account'}
+            Sign in to access your dashboard
           </p>
           <form onSubmit={handleSubmit}>
             <div className="mb-4">
@@ -74,7 +65,6 @@ const LoginPage: React.FC = () => {
               />
             </div>
             {error && <p className="text-red-500 text-xs italic mb-4">{error}</p>}
-            {message && <p className="text-green-500 text-xs italic mb-4">{message}</p>}
             <div className="flex items-center justify-between">
               <button
                 className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded focus:outline-none focus:shadow-outline w-full disabled:bg-blue-300 flex justify-center items-center"
@@ -84,26 +74,21 @@ const LoginPage: React.FC = () => {
                 {loading ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
                 ) : (
-                  isLogin ? 'Sign In' : 'Register'
+                  'Sign In'
                 )}
               </button>
             </div>
           </form>
-          <p className="text-center text-sm text-gray-600 mt-6">
-            {isLogin ? "Don't have an account?" : 'Already have an account?'}
-            <button
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setError(null);
-                setMessage(null);
-              }}
-              className="font-bold text-blue-600 hover:text-blue-800 ml-1"
-            >
-              {isLogin ? 'Sign Up' : 'Sign In'}
-            </button>
-          </p>
         </div>
       </div>
+      <footer className="text-center py-4 mt-8">
+        <p className="text-xs text-gray-500">
+          &copy; {new Date().getFullYear()} China Harbour Engineering Company. All rights reserved.
+        </p>
+        <p className="text-xs text-gray-500 mt-1">
+          Developed by <a href="https://www.datenova.io" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.datenova.io</a>
+        </p>
+      </footer>
     </div>
   );
 };

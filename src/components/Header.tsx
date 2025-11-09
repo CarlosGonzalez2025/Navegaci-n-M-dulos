@@ -1,17 +1,25 @@
-import React from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import type { Language } from '../types';
 import { Language as LanguageEnum } from '../types';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeftStartOnRectangleIcon } from '@heroicons/react/24/outline';
+import { 
+  ArrowLeftStartOnRectangleIcon, 
+  KeyIcon,
+  UserCircleIcon,
+  ChevronDownIcon 
+} from '@heroicons/react/24/outline';
 
 
 interface HeaderProps {
   language: Language;
   setLanguage: (lang: Language) => void;
+  onOpenChangePasswordModal: () => void;
   translations: {
     companyName: string;
     welcomeMessage: string;
     logout: string;
+    changePassword: string;
+    userMenu: string;
   };
 }
 
@@ -34,8 +42,23 @@ const LanguageButton: React.FC<{
 );
 
 
-const Header: React.FC<HeaderProps> = ({ language, setLanguage, translations }) => {
+const Header: React.FC<HeaderProps> = ({ language, setLanguage, onOpenChangePasswordModal, translations }) => {
   const { user, logout } = useAuth();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu on click outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setIsMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -54,16 +77,50 @@ const Header: React.FC<HeaderProps> = ({ language, setLanguage, translations }) 
             <LanguageButton lang={LanguageEnum.EN} currentLang={language} onClick={setLanguage}>EN</LanguageButton>
             <LanguageButton lang={LanguageEnum.ZH} currentLang={language} onClick={setLanguage}>ZH</LanguageButton>
         </div>
-        <div className="flex items-center gap-2">
-            <span className="text-sm text-gray-600 hidden md:block">{user?.email}</span>
-            <button
-                onClick={logout}
-                className="flex items-center gap-2 px-3 py-2 text-sm font-semibold text-red-600 bg-red-100 hover:bg-red-200 rounded-lg transition-colors"
-                aria-label={translations.logout}
-            >
-                <ArrowLeftStartOnRectangleIcon className="h-5 w-5" />
-                <span className="hidden sm:inline">{translations.logout}</span>
-            </button>
+        
+        {/* User Menu Dropdown */}
+        <div className="relative" ref={menuRef}>
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="flex items-center gap-2 p-2 text-sm font-medium text-gray-700 bg-white hover:bg-gray-100 border border-gray-200 rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-haspopup="true"
+            aria-expanded={isMenuOpen}
+            aria-label={translations.userMenu}
+          >
+            <UserCircleIcon className="h-6 w-6 text-gray-500" />
+            <span className="hidden md:inline">{user?.email}</span>
+            <ChevronDownIcon className={`h-4 w-4 text-gray-500 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          {isMenuOpen && (
+            <div className="absolute right-0 mt-2 w-64 bg-white rounded-md shadow-lg border border-gray-200 z-10 origin-top-right animate-in fade-in duration-100">
+              <div className="p-4 border-b border-gray-100">
+                <p className="text-sm font-semibold text-gray-800 truncate" title={user?.email}>{user?.email}</p>
+              </div>
+              <div className="py-2">
+                <button
+                  onClick={() => {
+                    onOpenChangePasswordModal();
+                    setIsMenuOpen(false);
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  <KeyIcon className="h-5 w-5 mr-3 text-gray-500" />
+                  {translations.changePassword}
+                </button>
+                <button
+                  onClick={() => {
+                    logout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <ArrowLeftStartOnRectangleIcon className="h-5 w-5 mr-3" />
+                  {translations.logout}
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </header>
