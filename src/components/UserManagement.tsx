@@ -81,7 +81,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
         throw error;
       }
 
-      // Supabase no soporta joins directos, así que manejamos la estructura devuelta
       const formattedUsers: User[] = (data || []).map((profile: any) => ({
         id: profile.id,
         email: profile.user_auth_info?.email || `user_${profile.id.slice(0, 8)}@chec.com`,
@@ -145,7 +144,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
     setIsModalOpen(false);
   };
 
-  // FUNCIÓN ACTUALIZADA CON ENFOQUE SIMPLIFICADO
+// FUNCIÓN ACTUALIZADA CON NUEVOS NOMBRES DE PARÁMETROS
+  // FUNCIÓN SIMPLIFICADA Y MÁS PERMISIVA
   const handleSaveUser = async (userData: any) => {
     setIsOperationLoading(true);
     try {
@@ -157,146 +157,110 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
             name: userData.name,
             role: userData.role,
             company: userData.company,
-            department: userData.department,
-            phone: userData.phone,
+            department: userData.department || '',
+            phone: userData.phone || '',
             is_active: userData.is_active
           })
           .eq('id', editingUser.id);
         
-        if (error) throw error;
-
-        if (userData.password) {
-          console.warn("Password update via UI requires a separate RPC function for security.");
+        if (error) {
+          console.error('Error updating user:', error);
+          throw new Error(`Error al actualizar: ${error.message}`);
         }
+
+        alert('✅ Usuario actualizado exitosamente');
       } else {
-        // Para usuarios nuevos, usar el flujo de dos pasos
-        const instructions = `
-🔄 PROCESO DE CREACIÓN DE USUARIO (2 PASOS)
-
-📧 PASO 1: Crear usuario en Supabase Authentication
-1. Se abrirá Supabase en una nueva pestaña
-2. Haz clic en "Add user"
-3. Ingresa estos datos:
-   • Email: ${userData.email}
-   • Password: ${userData.password}
-   • ✅ Marca "Auto Confirm User"
-4. Haz clic en "Create user"
-
-👤 PASO 2: Crear perfil automáticamente
-Después de crear el usuario, este sistema creará automáticamente el perfil.
-
-¿Quieres proceder?`;
-
-        const shouldProceed = confirm(instructions);
+        // Crear nuevo usuario - logs detallados para debugging
+        console.log('=== INICIANDO CREACIÓN DE USUARIO ===');
+        console.log('Datos del formulario:', userData);
         
-        if (!shouldProceed) {
-          return; // Usuario canceló
+        // Preparar datos limpios
+        const cleanUserData = {
+          user_email: (userData.email || '').trim(),
+          user_password: userData.password || '',
+          user_name: (userData.name || '').trim(),
+          user_role: userData.role || 'employee',
+          user_company: (userData.company || '').trim(),
+          user_department: (userData.department || '').trim(),
+          user_phone: (userData.phone || '').trim()
+        };
+        
+        console.log('Datos limpiados para RPC:', cleanUserData);
+        
+        // Validación básica en frontend
+        if (!cleanUserData.user_email || !cleanUserData.user_password || !cleanUserData.user_name) {
+          throw new Error('Por favor completa todos los campos obligatorios (email, contraseña, nombre)');
         }
 
-        // Abrir Supabase en nueva pestaña
-        const supabaseProjectId = 'uorsdalprrserlainmpu';
-        window.open(`https://supabase.com/dashboard/project/${supabaseProjectId}/auth/users`, '_blank');
-        
-        // Copiar email al portapapeles
-        if (navigator.clipboard) {
-          try {
-            await navigator.clipboard.writeText(userData.email);
-            alert('📋 Email copiado al portapapeles');
-          } catch (err) {
-            console.log('No se pudo copiar al portapapeles');
-          }
+        const { data, error } = await supabase.rpc('admin_create_user', cleanUserData);
+
+        console.log('=== RESPUESTA DE SUPABASE ===');
+        console.log('Data:', data);
+        console.log('Error:', error);
+
+        // Manejar errores de Supabase
+        if (error) {
+          console.error('Error de Supabase:', error);
+          throw new Error(`Error de conexión: ${error.message}`);
         }
 
-        // Esperar a que el usuario confirme que creó el usuario
-        const userCreated = confirm('¿Ya creaste el usuario en Supabase Authentication?\n\nHaz clic en "Aceptar" cuando hayas terminado el Paso 1.');
-        
-        if (!userCreated) {
-          alert('Proceso cancelado. Puedes intentar nuevamente cuando hayas creado el usuario.');
-          return;
-        }
-
-        // Intentar crear el perfil automáticamente
-        try {
-          const { data, error } = await supabase.rpc('create_profile_by_email', {
-            email: userData.email,
-            name: userData.name,
-            role: userData.role,
-            company: userData.company,
-            department: userData.department,
-            phone: userData.phone
-          });
-
-          if (error) {
-            throw new Error(`Error en RPC: ${error.message}`);
-          }
-
-          if (data && data.success === false) {
-            throw new Error(data.message);
-          }
-
-          alert('✅ ¡Usuario y perfil creados exitosamente!');
-
-        } catch (profileError: any) {
-          console.error('Error creating profile:', profileError);
-          
-          // Fallback: mostrar SQL manual
-          const fallbackSQL = `
--- Si el perfil automático falló, ejecuta este SQL manualmente:
-
-INSERT INTO profiles (id, name, role, company, department, phone, is_active)
-SELECT id, '${userData.name}', '${userData.role}', '${userData.company}', '${userData.department || ''}', '${userData.phone || ''}', true
-FROM auth.users 
-WHERE email = '${userData.email}';`;
-
-          alert(`⚠️ Error al crear el perfil automáticamente: ${profileError.message}\n\nPor favor, ejecuta este SQL en el SQL Editor:\n\n${fallbackSQL}`);
-          
-          if (navigator.clipboard) {
-            try {
-              await navigator.clipboard.writeText(fallbackSQL);
-              alert('📋 SQL copiado al portapapeles');
-            } catch (err) {
-              console.log('No se pudo copiar el SQL');
-            }
+        // Manejar respuesta de la función
+        if (data) {
+          if (data.success === false) {
+            console.error('Error de función:', data);
+            throw new Error(data.message || 'Error desconocido en la función');
           }
           
-          return; // No cerrar modal
+          if (data.success === true) {
+            console.log('✅ Usuario creado exitosamente:', data);
+            alert(`✅ ¡Usuario creado exitosamente!\n\n` +
+                  `Nombre: ${data.name}\n` +
+                  `Email: ${data.email}\n` +
+                  `Rol: ${data.role}\n` +
+                  `Empresa: ${data.company}`);
+          } else {
+            // Respuesta inesperada
+            console.warn('Respuesta inesperada:', data);
+            alert('⚠️ Usuario creado, pero con respuesta inesperada. Verifica la lista de usuarios.');
+          }
+        } else {
+          // Sin datos de respuesta
+          console.warn('Sin datos de respuesta');
+          alert('⚠️ No se recibió confirmación. Verifica si el usuario fue creado.');
         }
       }
       
+      // Siempre recargar usuarios y cerrar modal
+      console.log('Recargando lista de usuarios...');
       await fetchUsers();
       handleCloseModal();
+      
     } catch (error: any) {
-      console.error('Error saving user:', error);
-      let message = error?.message || JSON.stringify(error);
-      if (message === '{}') {
-        message = String(error);
+      console.error('=== ERROR COMPLETO ===');
+      console.error('Error object:', error);
+      console.error('Error message:', error.message);
+      console.error('Error stack:', error.stack);
+      
+      let userMessage = 'Error desconocido';
+      
+      if (error.message) {
+        userMessage = error.message;
+      } else if (typeof error === 'string') {
+        userMessage = error;
       }
-      alert(`Error al guardar usuario: ${message}`);
-    } finally {
-      setIsOperationLoading(false);
-    }
-  };
+      
+      // Mensajes más amigables para errores comunes
+      if (userMessage.includes('check constraint')) {
+        userMessage = 'Error de validación en la base de datos. Por favor ejecuta el script de corrección.';
+      } else if (userMessage.includes('does not exist')) {
+        userMessage = 'La función de creación no está configurada. Ejecuta el script SQL proporcionado.';
+      } else if (userMessage.includes('Ya existe un usuario')) {
+        userMessage = 'Ya existe un usuario con este email. Usa un email diferente.';
+      } else if (userMessage.includes('no autenticado')) {
+        userMessage = 'Tu sesión expiró. Por favor inicia sesión nuevamente.';
+      }
 
-  const handleDeleteUser = async (userId: string) => {
-    setIsOperationLoading(true);
-    try {
-      // Desactivar usuario directamente en la tabla de perfiles
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_active: false })
-        .eq('id', userId);
-      
-      if (error) throw error;
-      
-      await fetchUsers();
-      setDeletingUser(null);
-    } catch (error: any) {
-      console.error('Error deleting user:', error);
-      let message = error?.message || JSON.stringify(error);
-      if (message === '{}') {
-        message = String(error);
-      }
-      alert(`Error al eliminar usuario: ${message}`);
+      alert(`❌ Error al crear usuario:\n\n${userMessage}\n\nRevisa la consola para más detalles.`);
     } finally {
       setIsOperationLoading(false);
     }
@@ -332,9 +296,18 @@ WHERE email = '${userData.email}';`;
           <h2 className="text-lg font-semibold text-gray-900">{translations.users}</h2>
           <button
             onClick={() => handleOpenModal()}
-            className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors bg-blue-600 hover:bg-blue-700"
+            disabled={isOperationLoading}
+            className={`inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors ${
+              isOperationLoading 
+                ? 'bg-blue-400 cursor-not-allowed' 
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
-            <PlusIcon className="h-5 w-5 mr-2" />
+            {isOperationLoading ? (
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+            ) : (
+              <PlusIcon className="h-5 w-5 mr-2" />
+            )}
             {translations.addUser}
           </button>
         </div>
@@ -369,7 +342,6 @@ WHERE email = '${userData.email}';`;
       {/* Filtros y búsqueda */}
       <div className="bg-white rounded-lg border border-gray-200 p-4">
         <div className="flex flex-col md:flex-row gap-4">
-          {/* Búsqueda */}
           <div className="flex-1 relative">
             <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
@@ -381,7 +353,6 @@ WHERE email = '${userData.email}';`;
             />
           </div>
           
-          {/* Filtros */}
           <div className="flex gap-2">
             <select
               value={filters.role || ''}
