@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   PlusIcon, 
   MagnifyingGlassIcon, 
@@ -69,35 +69,29 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
   const [isOperationLoading, setIsOperationLoading] = useState(false);
   const [canCreateUsers, setCanCreateUsers] = useState(false); // Track if Edge Function is available
 
-  // Función para llamar a Edge Functions
-  const callEdgeFunction = async (endpoint: string, method: string = 'GET', body?: any) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
-      throw new Error('No authenticated session');
-    }
+  // Función para llamar a Edge Functions usando el SDK de Supabase
+  const callEdgeFunction = useCallback(async (endpoint: string, body?: any) => {
+    const payload = body ? { endpoint, ...body } : { endpoint };
 
-    const url = `${(supabase as any).supabaseUrl}/functions/v1/manage-users`;
-    
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
-      body: body ? JSON.stringify({ endpoint, ...body }) : JSON.stringify({ endpoint })
+    const { data, error } = await supabase.functions.invoke('manage-users', {
+      body: payload,
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Edge Function error');
+    if (error) {
+      // Captura errores de red, autenticación, etc.
+      throw error;
+    }
+    
+    // La función puede devolver su propio error estructurado
+    if (data && data.error) {
+      throw new Error(data.error);
     }
 
-    return response.json();
-  };
+    return data;
+  }, []);
 
   // Fetch users - intenta usar Edge Function primero, luego fallback a profiles
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
       try {
@@ -107,7 +101,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
         setCanCreateUsers(true); // Edge Function disponible
         return;
       } catch (edgeFunctionError) {
-        console.log('Edge Function not available, falling back to profiles table');
+        console.log('Edge Function not available, falling back to profiles table:', edgeFunctionError);
         setCanCreateUsers(false);
       }
       
@@ -152,11 +146,11 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [callEdgeFunction]);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   // Filtrar usuarios
   const filteredUsers = useMemo(() => {
@@ -218,7 +212,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
         // Si hay nueva contraseña y Edge Function disponible
         if (userData.password && canCreateUsers) {
           try {
-            await callEdgeFunction('/update-password', 'POST', {
+            await callEdgeFunction('/update-password', {
               userId: editingUser.id,
               newPassword: userData.password
             });
@@ -233,7 +227,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
           throw new Error('La creación de usuarios requiere configurar Edge Functions en Supabase');
         }
 
-        const result = await callEdgeFunction('/create', 'POST', {
+        const result = await callEdgeFunction('/create', {
           email: userData.email,
           password: userData.password,
           metadata: {
@@ -268,7 +262,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
     try {
       if (canCreateUsers) {
         // Usar Edge Function para desactivar
-        await callEdgeFunction('/delete', 'POST', { userId });
+        await callEdgeFunction('/delete', { userId });
       } else {
         // Fallback: desactivar usuario en profiles
         const { error } = await supabase
