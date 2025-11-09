@@ -51,34 +51,83 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [isOperationLoading, setIsOperationLoading] = useState(false);
+  const [canCreateUsers, setCanCreateUsers] = useState(false); // Track if Edge Function is available
 
-  // Fetch users - solo desde profiles
+  // Función para llamar a Edge Functions
+  const callEdgeFunction = async (endpoint: string, method: string = 'GET', body?: any) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      throw new Error('No authenticated session');
+    }
+
+    const url = `${(supabase as any).supabaseUrl}/functions/v1/manage-users${endpoint}`;
+    
+    const response = await fetch(url, {
+      method,
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: body ? JSON.stringify(body) : undefined
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Edge Function error');
+    }
+
+    return response.json();
+  };
+
+  // Fetch users - intenta usar Edge Function primero, luego fallback a profiles
   const fetchUsers = async () => {
     setLoading(true);
     try {
+      try {
+        // Intentar obtener usuarios desde Edge Function
+        const { users } = await callEdgeFunction('/list');
+        setUsers(users);
+        setCanCreateUsers(true); // Edge Function disponible
+        return;
+      } catch (edgeFunctionError) {
+        console.log('Edge Function not available, falling back to profiles table');
+        setCanCreateUsers(false);
+      }
+      
+      // Fallback: obtener solo desde profiles
       const { data, error } = await supabase
         .from('profiles')
-        .select('*');
+        .select('*')
+        .order('created_at', { ascending: false });
       
       if (error) {
         console.error('Error fetching users:', error);
-        setUsers([]); // Establecer array vacío en caso de error
+        setUsers([]);
         return;
       }
       
-      const formattedUsers: User[] = (data || []).map(profile => ({
-        id: profile.id,
-        email: profile.id, // Temporal, ya que no tenemos acceso a auth.users
-        name: profile.name || 'Sin nombre',
-        role: profile.role || 'employee',
-        company: profile.company || '',
-        department: profile.department || '',
-        phone: profile.phone || '',
-        is_active: profile.is_active !== false,
-        last_login: profile.updated_at, // Usar updated_at como aproximación
-        created_at: profile.created_at,
-        updated_at: profile.updated_at || profile.created_at
-      }));
+      // Combinar con vista de auth si está disponible
+      const { data: authInfo } = await supabase
+        .from('user_auth_info')
+        .select('*');
+      
+      const formattedUsers: User[] = (data || []).map(profile => {
+        const auth = authInfo?.find(a => a.id === profile.id);
+        return {
+          id: profile.id,
+          email: auth?.email || `user_${profile.id.slice(0, 8)}@chec.com`,
+          name: profile.name || 'Sin nombre',
+          role: profile.role || 'employee',
+          company: profile.company || '',
+          department: profile.department || '',
+          phone: profile.phone || '',
+          is_active: profile.is_active !== false,
+          last_login: auth?.last_sign_in_at || profile.updated_at,
+          created_at: profile.created_at,
+          updated_at: profile.updated_at || profile.created_at
+        };
+      });
       
       setUsers(formattedUsers);
     } catch (error) {
@@ -150,10 +199,40 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
           .eq('id', editingUser.id);
         
         if (error) throw error;
+
+        // Si hay nueva contraseña y Edge Function disponible
+        if (userData.password && canCreateUsers) {
+          try {
+            await callEdgeFunction('/update-password', 'POST', {
+              userId: editingUser.id,
+              newPassword: userData.password
+            });
+          } catch (error) {
+            console.error('Failed to update password:', error);
+            alert('Usuario actualizado, pero no se pudo cambiar la contraseña');
+          }
+        }
       } else {
-        // Para crear nuevos usuarios, necesitarías usar Supabase Auth Admin API
-        // Por ahora, solo permitir editar usuarios existentes
-        throw new Error('Crear usuarios requiere configuración adicional de Supabase Auth');
+        // Crear nuevo usuario
+        if (!canCreateUsers) {
+          throw new Error('La creación de usuarios requiere configurar Edge Functions en Supabase');
+        }
+
+        const result = await callEdgeFunction('/create', 'POST', {
+          email: userData.email,
+          password: userData.password,
+          metadata: {
+            name: userData.name,
+            role: userData.role,
+            company: userData.company,
+            department: userData.department,
+            phone: userData.phone
+          }
+        });
+
+        if (!result.success) {
+          throw new Error(result.error || 'Failed to create user');
+        }
       }
       
       await fetchUsers();
@@ -169,13 +248,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
   const handleDeleteUser = async (userId: string) => {
     setIsOperationLoading(true);
     try {
-      // Desactivar usuario en lugar de eliminarlo
-      const { error } = await supabase
-        .from('profiles')
-        .update({ is_active: false, updated_at: new Date().toISOString() })
-        .eq('id', userId);
-      
-      if (error) throw error;
+      if (canCreateUsers) {
+        // Usar Edge Function para desactivar
+        await callEdgeFunction('/delete', 'POST', { userId });
+      } else {
+        // Fallback: desactivar usuario en profiles
+        const { error } = await supabase
+          .from('profiles')
+          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .eq('id', userId);
+        
+        if (error) throw error;
+      }
       
       await fetchUsers();
       setDeletingUser(null);
@@ -200,7 +284,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
 
   const formatLastLogin = (lastLogin: string | undefined) => {
     if (!lastLogin) return translations.never;
-    return new Date(lastLogin).toLocaleDateString('es-ES');
+    return new Date(lastLogin).toLocaleDateString('es-ES', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
 
   return (
@@ -211,14 +301,34 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
           <h2 className="text-lg font-semibold text-gray-900">{translations.users}</h2>
           <button
             onClick={() => handleOpenModal()}
-            disabled={true} // Deshabilitar temporalmente hasta configurar auth admin
-            className="inline-flex items-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed"
-            title="Función disponible próximamente"
+            disabled={!canCreateUsers}
+            className={`inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors ${
+              canCreateUsers 
+                ? 'bg-blue-600 hover:bg-blue-700' 
+                : 'bg-gray-400 cursor-not-allowed'
+            }`}
+            title={!canCreateUsers ? "Configure Edge Functions para habilitar esta función" : undefined}
           >
             <PlusIcon className="h-5 w-5 mr-2" />
             {translations.addUser}
           </button>
         </div>
+        
+        {!canCreateUsers && (
+          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <p className="text-sm text-yellow-800">
+              Para habilitar la creación de usuarios, configura las Edge Functions en Supabase.
+              <a 
+                href="https://supabase.com/docs/guides/functions" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="ml-1 underline font-medium"
+              >
+                Ver documentación
+              </a>
+            </p>
+          </div>
+        )}
         
         {/* Estadísticas */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -231,6 +341,18 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
               {users.filter(u => u.is_active).length}
             </div>
             <div className="text-sm text-gray-600">{translations.activeUsers}</div>
+          </div>
+          <div className="bg-blue-50 rounded-lg p-4">
+            <div className="text-2xl font-bold text-blue-600">
+              {users.filter(u => u.role === 'admin').length}
+            </div>
+            <div className="text-sm text-gray-600">Administradores</div>
+          </div>
+          <div className="bg-purple-50 rounded-lg p-4">
+            <div className="text-2xl font-bold text-purple-600">
+              {uniqueCompanies.length}
+            </div>
+            <div className="text-sm text-gray-600">Empresas</div>
           </div>
         </div>
       </div>
@@ -322,6 +444,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estado
                   </th>
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Último acceso
+                  </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
                   </th>
@@ -333,7 +458,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                        <div className="text-sm text-gray-500">{user.company}</div>
+                        <div className="text-sm text-gray-500">{user.email}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -357,12 +482,16 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
                         </span>
                       )}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {formatLastLogin(user.last_login)}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">
                         <button
                           onClick={() => handleOpenModal(user)}
                           disabled={isOperationLoading}
                           className="text-blue-600 hover:text-blue-900 disabled:opacity-50"
+                          title={translations.edit}
                         >
                           <PencilIcon className="h-5 w-5" />
                         </button>
@@ -370,6 +499,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
                           onClick={() => setDeletingUser(user)}
                           disabled={isOperationLoading}
                           className="text-red-600 hover:text-red-900 disabled:opacity-50"
+                          title={translations.delete}
                         >
                           <TrashIcon className="h-5 w-5" />
                         </button>
@@ -392,6 +522,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
           user={editingUser}
           isLoading={isOperationLoading}
           translations={translations}
+          canUpdatePassword={canCreateUsers}
         />
       )}
 

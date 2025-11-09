@@ -8,6 +8,7 @@ interface UserModalProps {
   onSave: (userData: any) => void;
   user: User | null;
   isLoading?: boolean;
+  canUpdatePassword?: boolean;
   translations: {
     addUser: string;
     editUser: string;
@@ -39,6 +40,7 @@ const UserModal: React.FC<UserModalProps> = ({
   onSave,
   user,
   isLoading = false,
+  canUpdatePassword = false,
   translations
 }) => {
   const [formData, setFormData] = useState({
@@ -54,6 +56,7 @@ const UserModal: React.FC<UserModalProps> = ({
   
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showPassword, setShowPassword] = useState(false);
+  const [changePassword, setChangePassword] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -67,6 +70,7 @@ const UserModal: React.FC<UserModalProps> = ({
         phone: user.phone || '',
         is_active: user.is_active !== false
       });
+      setChangePassword(false);
     } else {
       setFormData({
         name: '',
@@ -78,6 +82,7 @@ const UserModal: React.FC<UserModalProps> = ({
         phone: '',
         is_active: true
       });
+      setChangePassword(true); // Always require password for new users
     }
     setErrors({});
     setShowPassword(false);
@@ -96,10 +101,11 @@ const UserModal: React.FC<UserModalProps> = ({
       newErrors.email = translations.invalidEmail;
     }
 
+    // Password validation
     if (!user && !formData.password) {
       newErrors.password = translations.required;
-    } else if (!user && formData.password && formData.password.length < 6) {
-      newErrors.password = translations.passwordMinLength;
+    } else if (changePassword && formData.password && formData.password.length < 6) {
+      newErrors.password = translations.passwordMinLength || 'La contraseña debe tener al menos 6 caracteres';
     }
 
     if (!formData.company.trim()) {
@@ -125,8 +131,8 @@ const UserModal: React.FC<UserModalProps> = ({
       is_active: formData.is_active
     };
 
-    if (!user) {
-      // Include password for new users
+    // Include password if it's a new user or if changing password
+    if (!user || (changePassword && formData.password)) {
       (userData as any).password = formData.password;
     }
 
@@ -215,38 +221,63 @@ const UserModal: React.FC<UserModalProps> = ({
               )}
             </div>
 
-            {/* Password (only for new users) */}
-            {!user && (
+            {/* Password section */}
+            {(!user || (user && canUpdatePassword)) && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {translations.userPassword} *
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={formData.password}
-                    onChange={(e) => handleInputChange('password', e.target.value)}
-                    disabled={isLoading}
-                    className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
-                      errors.password ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="Mínimo 6 caracteres"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isLoading}
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  >
-                    {showPassword ? (
-                      <EyeSlashIcon className="h-5 w-5 text-gray-400" />
-                    ) : (
-                      <EyeIcon className="h-5 w-5 text-gray-400" />
+                {user && (
+                  <div className="flex items-center mb-2">
+                    <input
+                      type="checkbox"
+                      id="changePassword"
+                      checked={changePassword}
+                      onChange={(e) => {
+                        setChangePassword(e.target.checked);
+                        if (!e.target.checked) {
+                          handleInputChange('password', '');
+                        }
+                      }}
+                      disabled={isLoading}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="changePassword" className="ml-2 text-sm text-gray-700">
+                      Cambiar contraseña
+                    </label>
+                  </div>
+                )}
+                
+                {(!user || changePassword) && (
+                  <>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      {translations.userPassword} {!user && '*'}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        value={formData.password}
+                        onChange={(e) => handleInputChange('password', e.target.value)}
+                        disabled={isLoading || (user && !changePassword)}
+                        className={`w-full px-3 py-2 pr-10 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-50 disabled:text-gray-500 ${
+                          errors.password ? 'border-red-300' : 'border-gray-300'
+                        }`}
+                        placeholder={user ? "Nueva contraseña (mínimo 6 caracteres)" : "Mínimo 6 caracteres"}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        disabled={isLoading || (user && !changePassword)}
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                      >
+                        {showPassword ? (
+                          <EyeSlashIcon className="h-5 w-5 text-gray-400" />
+                        ) : (
+                          <EyeIcon className="h-5 w-5 text-gray-400" />
+                        )}
+                      </button>
+                    </div>
+                    {errors.password && (
+                      <p className="mt-1 text-sm text-red-600">{errors.password}</p>
                     )}
-                  </button>
-                </div>
-                {errors.password && (
-                  <p className="mt-1 text-sm text-red-600">{errors.password}</p>
+                  </>
                 )}
               </div>
             )}
