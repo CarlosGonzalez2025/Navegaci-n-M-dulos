@@ -10,28 +10,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // This single useEffect, which relies on onAuthStateChange, is the correct
-  // pattern. The issue was that awaiting fetchProfile could hang the entire
-  // app if the database connection is unstable.
   useEffect(() => {
     setLoading(true);
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event: AuthChangeEvent, session: Session | null) => {
-        // As soon as we get an auth event, we set the user.
         setUser(session?.user ?? null);
         
-        // If there's a user, we fetch their profile. This happens in the
-        // background and won't block the UI from rendering.
         if (session?.user) {
           fetchProfile(session.user.id);
         } else {
-          // If there's no session, ensure the profile is cleared.
           setProfile(null);
         }
         
-        // Now that we have the authentication state, we can hide the
-        // main app loader.
         setLoading(false);
       }
     );
@@ -41,32 +32,73 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   }, []);
 
-  // I've modified fetchProfile to handle its own errors. This makes the
-  // calling code cleaner and ensures that a failed profile fetch won't
-  // crash the app.
   const fetchProfile = async (userId: string) => {
     try {
+      // Intentar obtener el perfil
       const { data, error } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
-      if (error && error.code !== 'PGRST116') { // PGRST116: no rows found
-        throw error;
+      if (error) {
+        // Si no existe el perfil, crear uno básico
+        if (error.code === 'PGRST116') {
+          console.log('Profile not found, creating default profile...');
+          const { data: newProfile, error: createError } = await supabase
+            .from('profiles')
+            .insert({
+              id: userId,
+              name: 'Usuario',
+              role: 'employee',
+              company: 'CHEC',
+              is_active: true
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating profile:', createError);
+            // Crear perfil local temporal
+            setProfile({
+              id: userId,
+              name: 'Usuario',
+              role: 'employee',
+              company: 'CHEC',
+              is_active: true
+            });
+          } else {
+            setProfile(newProfile as Profile);
+          }
+        } else {
+          console.error('Error fetching profile:', error);
+          // Crear perfil local temporal si hay problemas de permisos
+          setProfile({
+            id: userId,
+            name: 'Usuario',
+            role: 'employee',
+            company: 'CHEC',
+            is_active: true
+          });
+        }
+      } else {
+        setProfile(data as Profile);
       }
-      setProfile(data as Profile | null);
     } catch (error) {
-      console.error('Error fetching profile:', error);
-      // On error, we clear the profile to prevent showing stale data.
-      setProfile(null);
+      console.error('Unexpected error fetching profile:', error);
+      // Perfil por defecto en caso de error
+      setProfile({
+        id: userId,
+        name: 'Usuario',
+        role: 'employee',
+        company: 'CHEC',
+        is_active: true
+      });
     }
   };
 
   const logout = async () => {
     await supabase.auth.signOut();
-    // The onAuthStateChange listener will clear the state, but we also do it
-    // here for a more responsive UI.
     setUser(null);
     setProfile(null);
   };

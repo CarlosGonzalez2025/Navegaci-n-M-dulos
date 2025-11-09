@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   PlusIcon, 
   MagnifyingGlassIcon, 
-  FunnelIcon,
   PencilIcon,
   TrashIcon,
   UserIcon,
@@ -31,13 +30,11 @@ interface UserManagementProps {
     never: string;
     allRoles: string;
     allCompanies: string;
-    // Roles
     admin: string;
     coordinator: string;
     sst_specialist: string;
     nurse: string;
     employee: string;
-    // Confirmaciones
     confirmDelete: string;
     confirmDeleteMessage: string;
     deleteUserTitle: string;
@@ -55,48 +52,38 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [isOperationLoading, setIsOperationLoading] = useState(false);
 
-  // Fetch users
+  // Fetch users - solo desde profiles
   const fetchUsers = async () => {
     setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('auth.users')
-        .select(`
-          id,
-          email,
-          raw_user_meta_data,
-          created_at,
-          last_sign_in_at,
-          email_confirmed_at,
-          profiles (
-            name,
-            role,
-            company,
-            department,
-            phone,
-            is_active
-          )
-        `);
+        .from('profiles')
+        .select('*');
       
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching users:', error);
+        setUsers([]); // Establecer array vacío en caso de error
+        return;
+      }
       
-      const formattedUsers: User[] = data.map(user => ({
-        id: user.id,
-        email: user.email,
-        name: user.profiles?.name || user.raw_user_meta_data?.name || 'Sin nombre',
-        role: user.profiles?.role || 'employee',
-        company: user.profiles?.company || '',
-        department: user.profiles?.department || '',
-        phone: user.profiles?.phone || '',
-        is_active: user.profiles?.is_active !== false,
-        last_login: user.last_sign_in_at,
-        created_at: user.created_at,
-        updated_at: user.created_at
+      const formattedUsers: User[] = (data || []).map(profile => ({
+        id: profile.id,
+        email: profile.id, // Temporal, ya que no tenemos acceso a auth.users
+        name: profile.name || 'Sin nombre',
+        role: profile.role || 'employee',
+        company: profile.company || '',
+        department: profile.department || '',
+        phone: profile.phone || '',
+        is_active: profile.is_active !== false,
+        last_login: profile.updated_at, // Usar updated_at como aproximación
+        created_at: profile.created_at,
+        updated_at: profile.updated_at || profile.created_at
       }));
       
       setUsers(formattedUsers);
     } catch (error) {
       console.error('Error fetching users:', error);
+      setUsers([]);
     } finally {
       setLoading(false);
     }
@@ -164,34 +151,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
         
         if (error) throw error;
       } else {
-        // Crear nuevo usuario
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: userData.email,
-          password: userData.password,
-          options: {
-            data: {
-              name: userData.name
-            }
-          }
-        });
-        
-        if (authError) throw authError;
-        
-        if (authData.user) {
-          const { error: profileError } = await supabase
-            .from('profiles')
-            .insert({
-              id: authData.user.id,
-              name: userData.name,
-              role: userData.role,
-              company: userData.company,
-              department: userData.department,
-              phone: userData.phone,
-              is_active: true
-            });
-          
-          if (profileError) throw profileError;
-        }
+        // Para crear nuevos usuarios, necesitarías usar Supabase Auth Admin API
+        // Por ahora, solo permitir editar usuarios existentes
+        throw new Error('Crear usuarios requiere configuración adicional de Supabase Auth');
       }
       
       await fetchUsers();
@@ -210,7 +172,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
       // Desactivar usuario en lugar de eliminarlo
       const { error } = await supabase
         .from('profiles')
-        .update({ is_active: false })
+        .update({ is_active: false, updated_at: new Date().toISOString() })
         .eq('id', userId);
       
       if (error) throw error;
@@ -249,8 +211,9 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
           <h2 className="text-lg font-semibold text-gray-900">{translations.users}</h2>
           <button
             onClick={() => handleOpenModal()}
-            disabled={isOperationLoading}
-            className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+            disabled={true} // Deshabilitar temporalmente hasta configurar auth admin
+            className="inline-flex items-center px-4 py-2 bg-gray-400 text-white rounded-lg cursor-not-allowed"
+            title="Función disponible próximamente"
           >
             <PlusIcon className="h-5 w-5 mr-2" />
             {translations.addUser}
@@ -359,9 +322,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estado
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    {translations.lastLogin}
-                  </th>
                   <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Acciones
                   </th>
@@ -373,7 +333,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div>
                         <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                        <div className="text-sm text-gray-500">{user.email}</div>
+                        <div className="text-sm text-gray-500">{user.company}</div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -396,9 +356,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
                           {translations.inactive}
                         </span>
                       )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatLastLogin(user.last_login)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">
