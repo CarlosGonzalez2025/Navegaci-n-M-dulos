@@ -1,17 +1,16 @@
-import type { User } from '@supabase/supabase-js';
-
+// Tipos existentes
 export enum Language {
   ES = 'es',
   EN = 'en',
-  ZH = 'zh',
+  ZH = 'zh'
 }
 
 export enum Category {
-  Favorites = 'favorites',
   Applications = 'applications',
-  Navigation = 'navigation',
-  Processes = 'processes',
+  Reports = 'reports',
+  Favorites = 'favorites',
   Admin = 'admin',
+  Users = 'users' // Nuevo para gestión de usuarios
 }
 
 export interface Module {
@@ -19,24 +18,81 @@ export interface Module {
   name_es: string;
   name_en: string;
   name_zh: string;
-  // Fix: Use Exclude for union types, not Omit. Omit is for object property types.
-  category: Exclude<Category, Category.Favorites | Category.Admin>;
   url: string;
   icon: string | null;
-  description?: string | null;
-  created_at?: string;
-  updated_at?: string;
+  category: Category;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface Profile {
-    id: string;
-    role: 'admin' | 'user';
-    username?: string;
+// Nuevos tipos para gestión de usuarios
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+  company: string;
+  department?: string;
+  phone?: string;
+  is_active: boolean;
+  last_login?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export interface AuthContextType {
-    user: User | null;
-    profile: Profile | null;
-    loading: boolean;
-    logout: () => Promise<void>;
+export enum UserRole {
+  ADMIN = 'admin',
+  COORDINATOR = 'coordinator',
+  SST_SPECIALIST = 'sst_specialist',
+  NURSE = 'nurse',
+  EMPLOYEE = 'employee'
+}
+
+export interface UserProfile {
+  id: string;
+  user_id: string;
+  role: UserRole;
+  company: string;
+  department?: string;
+  permissions?: string[];
+  created_at: string;
+  updated_at: string;
+}
+
+// Tipos para formularios
+export interface CreateUserData {
+  email: string;
+  password: string;
+  name: string;
+  role: UserRole;
+  company: string;
+  department?: string;
+  phone?: string;
+}
+
+export interface UpdateUserData {
+  name?: string;
+  role?: UserRole;
+  company?: string;
+  department?: string;
+  phone?: string;
+  is_active?: boolean;
+}
+
+// Tipos para filtros y búsqueda
+export interface UserFilters {
+  role?: UserRole;
+  company?: string;
+  department?: string;
+  is_active?: boolean;
+  search?: string;
+}
+
+// Tipos para estadísticas de usuarios
+export interface UserStats {
+  total: number;
+  active: number;
+  by_role: Record<UserRole, number>;
+  by_company: Record<string, number>;
+  recent_logins: number;
 }

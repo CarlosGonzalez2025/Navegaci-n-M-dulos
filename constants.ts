@@ -1,80 +1,321 @@
+import { Language } from './types';
+
 export const translations = {
-  es: {
-    companyName: 'China Harbour Engineering Company Limited',
-    welcomeMessage: 'Bienvenido al entorno digital diseñado para el Sistema Integrado de Gestión',
-    favorites: 'FAVORITOS',
-    applications: 'APLICACIONES',
-    navigationMap: 'MAPA DE NAVEGACIÓN',
-    processMap: 'MAPA DE PROCESOS',
-    admin: 'ADMINISTRACIÓN',
-    noFavorites: 'No tienes módulos favoritos.',
-    noModules: 'No hay módulos en esta categoría.',
-    logout: 'Cerrar Sesión',
-    edit: 'Editar',
-    delete: 'Eliminar',
-    addModule: 'Agregar Módulo',
-    editModule: 'Editar Módulo',
+  [Language.ES]: {
+    // Navegación
+    applications: 'Aplicaciones',
+    reports: 'Reportes',
+    favorites: 'Favoritos',
+    admin: 'Administración',
+    users: 'Usuarios',
+    
+    // Módulos
+    noFavorites: 'No tienes módulos favoritos',
+    noModules: 'No hay módulos disponibles',
+    addModule: 'Añadir módulo',
+    editModule: 'Editar módulo',
+    deleteModule: 'Eliminar módulo',
+    
+    // Formularios de módulos
+    moduleName: 'Nombre del módulo',
+    moduleNameEn: 'Nombre en inglés',
+    moduleNameZh: 'Nombre en chino',
+    moduleUrl: 'URL del módulo',
+    moduleCategory: 'Categoría',
+    moduleIcon: 'Icono',
+    selectIcon: 'Seleccionar icono',
+    searchIcons: 'Buscar iconos...',
+    recommended: 'Recomendados',
+    categories: 'Categorías',
+    noResults: 'No se encontraron resultados',
+    
+    // Gestión de usuarios
+    addUser: 'Añadir usuario',
+    editUser: 'Editar usuario',
+    deleteUser: 'Eliminar usuario',
+    userName: 'Nombre completo',
+    userEmail: 'Correo electrónico',
+    userPassword: 'Contraseña',
+    userRole: 'Rol',
+    userCompany: 'Empresa',
+    userDepartment: 'Departamento',
+    userPhone: 'Teléfono',
+    userActive: 'Usuario activo',
+    
+    // Roles de usuario
+    admin: 'Administrador',
+    coordinator: 'Coordinador',
+    sst_specialist: 'Especialista SST',
+    nurse: 'Enfermería',
+    employee: 'Empleado',
+    
+    // Estados
+    active: 'Activo',
+    inactive: 'Inactivo',
+    lastLogin: 'Último acceso',
+    never: 'Nunca',
+    
+    // Acciones generales
     save: 'Guardar',
     cancel: 'Cancelar',
-    confirmDelete: '¿Estás seguro de que quieres eliminar este módulo?',
-    name_es: 'Nombre (Español)',
-    name_en: 'Nombre (Inglés)',
-    name_zh: 'Nombre (Chino)',
-    category: 'Categoría',
-    url: 'URL',
-    icon: 'Ícono (Nombre de Heroicon)',
-    description: 'Descripción (Opcional)',
+    edit: 'Editar',
+    delete: 'Eliminar',
+    create: 'Crear',
+    update: 'Actualizar',
+    search: 'Buscar',
+    filter: 'Filtrar',
+    
+    // Confirmaciones
+    confirmDelete: '¿Estás seguro de que deseas eliminar este elemento?',
+    confirmDeleteMessage: 'Esta acción no se puede deshacer.',
+    deleteModuleTitle: 'Eliminar módulo',
+    deleteUserTitle: 'Eliminar usuario',
+    
+    // Validaciones
+    required: 'Este campo es obligatorio',
+    invalidEmail: 'Correo electrónico no válido',
+    invalidUrl: 'URL no válida',
+    passwordMinLength: 'La contraseña debe tener al menos 6 caracteres',
+    
+    // Mensajes
+    loading: 'Cargando...',
+    saving: 'Guardando...',
+    deleting: 'Eliminando...',
+    success: 'Operación exitosa',
+    error: 'Error',
+    noUsersFound: 'No se encontraron usuarios',
+    userCreatedSuccess: 'Usuario creado exitosamente',
+    userUpdatedSuccess: 'Usuario actualizado exitosamente',
+    userDeletedSuccess: 'Usuario eliminado exitosamente',
+    
+    // Filtros
+    allRoles: 'Todos los roles',
+    allCompanies: 'Todas las empresas',
+    allDepartments: 'Todos los departamentos',
+    showActive: 'Mostrar activos',
+    showInactive: 'Mostrar inactivos',
+    
+    // Estadísticas
+    totalUsers: 'Total de usuarios',
+    activeUsers: 'Usuarios activos',
+    usersByRole: 'Usuarios por rol',
+    usersByCompany: 'Usuarios por empresa',
+    recentLogins: 'Accesos recientes',
+    
+    // Favoritos
+    addToFavorites: 'Añadir a favoritos',
+    removeFromFavorites: 'Quitar de favoritos'
   },
-  en: {
-    companyName: 'China Harbour Engineering Company Limited',
-    welcomeMessage: 'Welcome to the digital environment designed for the Integrated Management System',
-    favorites: 'FAVORITES',
-    applications: 'APPLICATIONS',
-    navigationMap: 'NAVIGATION MAP',
-    processMap: 'PROCESS MAP',
-    admin: 'ADMIN',
-    noFavorites: 'You have no favorite modules.',
-    noModules: 'There are no modules in this category.',
-    logout: 'Logout',
-    edit: 'Edit',
-    delete: 'Delete',
-    addModule: 'Add Module',
-    editModule: 'Edit Module',
+  
+  [Language.EN]: {
+    // Navigation
+    applications: 'Applications',
+    reports: 'Reports',
+    favorites: 'Favorites',
+    admin: 'Administration',
+    users: 'Users',
+    
+    // Modules
+    noFavorites: 'You have no favorite modules',
+    noModules: 'No modules available',
+    addModule: 'Add module',
+    editModule: 'Edit module',
+    deleteModule: 'Delete module',
+    
+    // Module forms
+    moduleName: 'Module name',
+    moduleNameEn: 'Name in English',
+    moduleNameZh: 'Name in Chinese',
+    moduleUrl: 'Module URL',
+    moduleCategory: 'Category',
+    moduleIcon: 'Icon',
+    selectIcon: 'Select icon',
+    searchIcons: 'Search icons...',
+    recommended: 'Recommended',
+    categories: 'Categories',
+    noResults: 'No results found',
+    
+    // User management
+    addUser: 'Add user',
+    editUser: 'Edit user',
+    deleteUser: 'Delete user',
+    userName: 'Full name',
+    userEmail: 'Email',
+    userPassword: 'Password',
+    userRole: 'Role',
+    userCompany: 'Company',
+    userDepartment: 'Department',
+    userPhone: 'Phone',
+    userActive: 'Active user',
+    
+    // User roles
+    admin: 'Administrator',
+    coordinator: 'Coordinator',
+    sst_specialist: 'SST Specialist',
+    nurse: 'Nurse',
+    employee: 'Employee',
+    
+    // States
+    active: 'Active',
+    inactive: 'Inactive',
+    lastLogin: 'Last login',
+    never: 'Never',
+    
+    // General actions
     save: 'Save',
     cancel: 'Cancel',
-    confirmDelete: 'Are you sure you want to delete this module?',
-    name_es: 'Name (Spanish)',
-    name_en: 'Name (English)',
-    name_zh: 'Name (Chinese)',
-    category: 'Category',
-    url: 'URL',
-    icon: 'Icon (Heroicon Name)',
-    description: 'Description (Optional)',
+    edit: 'Edit',
+    delete: 'Delete',
+    create: 'Create',
+    update: 'Update',
+    search: 'Search',
+    filter: 'Filter',
+    
+    // Confirmations
+    confirmDelete: 'Are you sure you want to delete this item?',
+    confirmDeleteMessage: 'This action cannot be undone.',
+    deleteModuleTitle: 'Delete module',
+    deleteUserTitle: 'Delete user',
+    
+    // Validations
+    required: 'This field is required',
+    invalidEmail: 'Invalid email',
+    invalidUrl: 'Invalid URL',
+    passwordMinLength: 'Password must be at least 6 characters',
+    
+    // Messages
+    loading: 'Loading...',
+    saving: 'Saving...',
+    deleting: 'Deleting...',
+    success: 'Operation successful',
+    error: 'Error',
+    noUsersFound: 'No users found',
+    userCreatedSuccess: 'User created successfully',
+    userUpdatedSuccess: 'User updated successfully',
+    userDeletedSuccess: 'User deleted successfully',
+    
+    // Filters
+    allRoles: 'All roles',
+    allCompanies: 'All companies',
+    allDepartments: 'All departments',
+    showActive: 'Show active',
+    showInactive: 'Show inactive',
+    
+    // Statistics
+    totalUsers: 'Total users',
+    activeUsers: 'Active users',
+    usersByRole: 'Users by role',
+    usersByCompany: 'Users by company',
+    recentLogins: 'Recent logins',
+    
+    // Favorites
+    addToFavorites: 'Add to favorites',
+    removeFromFavorites: 'Remove from favorites'
   },
-  zh: {
-    companyName: '中国港湾工程有限责任公司',
-    welcomeMessage: '欢迎来到为综合管理系统设计的数字环境',
+  
+  [Language.ZH]: {
+    // 导航
+    applications: '应用程序',
+    reports: '报告',
     favorites: '收藏夹',
-    applications: '应用',
-    navigationMap: '导航图',
-    processMap: '流程图',
     admin: '管理',
-    noFavorites: '您没有收藏的模块。',
-    noModules: '此类别中没有模块。',
-    logout: '登出',
-    edit: '编辑',
-    delete: '删除',
+    users: '用户',
+    
+    // 模块
+    noFavorites: '您没有收藏的模块',
+    noModules: '没有可用的模块',
     addModule: '添加模块',
     editModule: '编辑模块',
+    deleteModule: '删除模块',
+    
+    // 模块表单
+    moduleName: '模块名称',
+    moduleNameEn: '英文名称',
+    moduleNameZh: '中文名称',
+    moduleUrl: '模块网址',
+    moduleCategory: '类别',
+    moduleIcon: '图标',
+    selectIcon: '选择图标',
+    searchIcons: '搜索图标...',
+    recommended: '推荐',
+    categories: '类别',
+    noResults: '未找到结果',
+    
+    // 用户管理
+    addUser: '添加用户',
+    editUser: '编辑用户',
+    deleteUser: '删除用户',
+    userName: '全名',
+    userEmail: '电子邮件',
+    userPassword: '密码',
+    userRole: '角色',
+    userCompany: '公司',
+    userDepartment: '部门',
+    userPhone: '电话',
+    userActive: '活跃用户',
+    
+    // 用户角色
+    admin: '管理员',
+    coordinator: '协调员',
+    sst_specialist: 'SST专家',
+    nurse: '护士',
+    employee: '员工',
+    
+    // 状态
+    active: '活跃',
+    inactive: '非活跃',
+    lastLogin: '最后登录',
+    never: '从未',
+    
+    // 通用操作
     save: '保存',
     cancel: '取消',
-    confirmDelete: '您确定要删除此模块吗？',
-    name_es: '名称（西班牙语）',
-    name_en: '名称（英语）',
-    name_zh: '名称（中文）',
-    category: '类别',
-    url: '链接地址',
-    icon: '图标 (Heroicon 名称)',
-    description: '描述（可选）',
-  },
+    edit: '编辑',
+    delete: '删除',
+    create: '创建',
+    update: '更新',
+    search: '搜索',
+    filter: '筛选',
+    
+    // 确认
+    confirmDelete: '您确定要删除此项吗？',
+    confirmDeleteMessage: '此操作无法撤消。',
+    deleteModuleTitle: '删除模块',
+    deleteUserTitle: '删除用户',
+    
+    // 验证
+    required: '此字段为必填项',
+    invalidEmail: '无效的电子邮件',
+    invalidUrl: '无效的网址',
+    passwordMinLength: '密码至少需要6个字符',
+    
+    // 消息
+    loading: '加载中...',
+    saving: '保存中...',
+    deleting: '删除中...',
+    success: '操作成功',
+    error: '错误',
+    noUsersFound: '未找到用户',
+    userCreatedSuccess: '用户创建成功',
+    userUpdatedSuccess: '用户更新成功',
+    userDeletedSuccess: '用户删除成功',
+    
+    // 筛选器
+    allRoles: '所有角色',
+    allCompanies: '所有公司',
+    allDepartments: '所有部门',
+    showActive: '显示活跃',
+    showInactive: '显示非活跃',
+    
+    // 统计
+    totalUsers: '总用户数',
+    activeUsers: '活跃用户',
+    usersByRole: '按角色分类的用户',
+    usersByCompany: '按公司分类的用户',
+    recentLogins: '最近登录',
+    
+    // 收藏夹
+    addToFavorites: '添加到收藏夹',
+    removeFromFavorites: '从收藏夹中删除'
+  }
 };
