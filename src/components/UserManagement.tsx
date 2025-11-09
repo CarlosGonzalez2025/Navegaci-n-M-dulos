@@ -14,6 +14,8 @@ import UserModal from './UserModal';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 
 interface UserManagementProps {
+  // FIX: Expanded translations to include all keys needed by this component and its child UserModal.
+  // This resolves the missing properties error when passing translations to UserModal.
   translations: {
     users: string;
     addUser: string;
@@ -30,7 +32,7 @@ interface UserManagementProps {
     never: string;
     allRoles: string;
     allCompanies: string;
-    admin: string;
+    roleAdmin: string;
     coordinator: string;
     sst_specialist: string;
     nurse: string;
@@ -39,6 +41,20 @@ interface UserManagementProps {
     confirmDeleteMessage: string;
     deleteUserTitle: string;
     cancel: string;
+    // For UserModal
+    editUser: string;
+    userName: string;
+    userEmail: string;
+    userPassword: string;
+    userRole: string;
+    userCompany: string;
+    userDepartment: string;
+    userPhone: string;
+    userActive: string;
+    save: string;
+    required: string;
+    invalidEmail: string;
+    passwordMinLength: string;
   };
 }
 
@@ -61,15 +77,15 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
       throw new Error('No authenticated session');
     }
 
-    const url = `${(supabase as any).supabaseUrl}/functions/v1/manage-users${endpoint}`;
+    const url = `${(supabase as any).supabaseUrl}/functions/v1/manage-users`;
     
     const response = await fetch(url, {
-      method,
+      method: 'POST',
       headers: {
         'Authorization': `Bearer ${session.access_token}`,
         'Content-Type': 'application/json',
       },
-      body: body ? JSON.stringify(body) : undefined
+      body: body ? JSON.stringify({ endpoint, ...body }) : JSON.stringify({ endpoint })
     });
 
     if (!response.ok) {
@@ -193,8 +209,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
             company: userData.company,
             department: userData.department,
             phone: userData.phone,
-            is_active: userData.is_active,
-            updated_at: new Date().toISOString()
+            is_active: userData.is_active
           })
           .eq('id', editingUser.id);
         
@@ -239,7 +254,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
       handleCloseModal();
     } catch (error: any) {
       console.error('Error saving user:', error);
-      alert(`Error al guardar usuario: ${error.message}`);
+      const errorMessage = (error?.message && typeof error.message === 'string')
+        ? error.message
+        : JSON.stringify(error);
+      alert(`Error al guardar usuario: ${errorMessage}`);
     } finally {
       setIsOperationLoading(false);
     }
@@ -255,7 +273,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
         // Fallback: desactivar usuario en profiles
         const { error } = await supabase
           .from('profiles')
-          .update({ is_active: false, updated_at: new Date().toISOString() })
+          .update({ is_active: false })
           .eq('id', userId);
         
         if (error) throw error;
@@ -265,7 +283,10 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
       setDeletingUser(null);
     } catch (error: any) {
       console.error('Error deleting user:', error);
-      alert(`Error al eliminar usuario: ${error.message}`);
+      const errorMessage = (error?.message && typeof error.message === 'string')
+        ? error.message
+        : JSON.stringify(error);
+      alert(`Error al eliminar usuario: ${errorMessage}`);
     } finally {
       setIsOperationLoading(false);
     }
@@ -273,7 +294,8 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
 
   const getRoleLabel = (role: UserRole) => {
     const roleMap: Record<UserRole, string> = {
-      'admin': translations.admin,
+      // FIX: Use the renamed 'roleAdmin' key for consistency.
+      'admin': translations.roleAdmin,
       'coordinator': translations.coordinator,
       'sst_specialist': translations.sst_specialist,
       'nurse': translations.nurse,

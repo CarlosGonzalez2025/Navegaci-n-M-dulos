@@ -136,19 +136,25 @@ export default function Dashboard() {
     setIsModalOpen(false);
   };
 
-  const handleSaveModule = async (module: Omit<Module, 'id' | 'created_at' | 'updated_at'>) => {
+  const handleSaveModule = async (moduleData: Omit<Module, 'id' | 'created_at' | 'updated_at'>) => {
     setIsOperationLoading(true);
+
+    // Explicitly define the payload to ensure no extra fields are sent.
+    const payload = {
+      name_es: moduleData.name_es,
+      name_en: moduleData.name_en,
+      name_zh: moduleData.name_zh,
+      url: moduleData.url,
+      icon: moduleData.icon,
+      category: moduleData.category,
+    };
     
     try {
       if (editingModule) {
         // Update existing module
-        const updatePayload = {
-          ...module,
-          updated_at: new Date().toISOString(),
-        };
         const { error, data } = await supabase
           .from('modules')
-          .update(updatePayload)
+          .update(payload)
           .eq('id', editingModule.id)
           .select()
           .single();
@@ -159,11 +165,7 @@ export default function Dashboard() {
         // Create new module
         const { data, error } = await supabase
           .from('modules')
-          .insert({
-            ...module,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
+          .insert(payload)
           .select()
           .single();
         
@@ -173,7 +175,9 @@ export default function Dashboard() {
       handleCloseModal();
     } catch (err: any) {
       console.error("Failed to save module", err);
-      const errorMessage = err?.message || 'Error inesperado al guardar el módulo';
+      const errorMessage = (err?.message && typeof err.message === 'string') 
+        ? err.message 
+        : JSON.stringify(err);
       alert(`Error al guardar módulo: ${errorMessage}`);
     } finally {
       setIsOperationLoading(false);
@@ -208,7 +212,9 @@ export default function Dashboard() {
       setFavorites(prev => prev.filter(id => id !== moduleId));
     } catch (error: any) {
       console.error("Failed to delete module", error);
-      const errorMessage = error?.message || 'Error inesperado al eliminar el módulo';
+      const errorMessage = (error?.message && typeof error.message === 'string')
+        ? error.message
+        : JSON.stringify(error);
       alert(`Error al eliminar módulo: ${errorMessage}`);
     } finally {
       setIsOperationLoading(false);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { XMarkIcon, EyeIcon, EyeSlashIcon } from '@heroicons/react/24/outline';
-import type { User, UserRole } from '../types';
+// FIX: Import UserRole as a value to use its members, not just as a type.
+import { type User, UserRole } from '../types';
 
 interface UserModalProps {
   isOpen: boolean;
@@ -26,7 +27,8 @@ interface UserModalProps {
     invalidEmail: string;
     passwordMinLength: string;
     // Roles
-    admin: string;
+    // FIX: Renamed 'admin' to 'roleAdmin' to match changes in constants.ts
+    roleAdmin: string;
     coordinator: string;
     sst_specialist: string;
     nurse: string;
@@ -47,7 +49,8 @@ const UserModal: React.FC<UserModalProps> = ({
     name: '',
     email: '',
     password: '',
-    role: 'employee' as UserRole,
+    // FIX: Use enum member for type safety.
+    role: UserRole.EMPLOYEE,
     company: '',
     department: '',
     phone: '',
@@ -64,7 +67,8 @@ const UserModal: React.FC<UserModalProps> = ({
         name: user.name || '',
         email: user.email || '',
         password: '',
-        role: user.role || 'employee',
+        // FIX: Use enum member to ensure correct type assignment.
+        role: user.role || UserRole.EMPLOYEE,
         company: user.company || '',
         department: user.department || '',
         phone: user.phone || '',
@@ -76,7 +80,8 @@ const UserModal: React.FC<UserModalProps> = ({
         name: '',
         email: '',
         password: '',
-        role: 'employee',
+        // FIX: Use enum member to ensure correct type assignment.
+        role: UserRole.EMPLOYEE,
         company: '',
         department: '',
         phone: '',
@@ -147,7 +152,8 @@ const UserModal: React.FC<UserModalProps> = ({
   };
 
   const roleOptions = [
-    { value: 'admin', label: translations.admin },
+    // FIX: Use the renamed 'roleAdmin' key for the admin role label.
+    { value: 'admin', label: translations.roleAdmin },
     { value: 'coordinator', label: translations.coordinator },
     { value: 'sst_specialist', label: translations.sst_specialist },
     { value: 'nurse', label: translations.nurse },

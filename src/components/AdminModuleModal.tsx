@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { XMarkIcon } from '@heroicons/react/24/outline';
 import IconSelector from './IconSelector';
 import { isValidIcon, getSuggestedIconForModule } from '../lib/iconUtils';
-import type { Module, Category } from '../types';
+// FIX: Import Category as a value to use its members like Category.Applications.
+import { type Module, Category } from '../types';
 import * as HeroIcons from '@heroicons/react/24/outline';
 
 interface AdminModuleModalProps {
@@ -50,7 +51,8 @@ const AdminModuleModal: React.FC<AdminModuleModalProps> = ({
     name_zh: '',
     url: '',
     icon: '',
-    category: 'applications' as Category
+    // FIX: Use enum member for type safety.
+    category: Category.Applications
   });
   
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -64,7 +66,8 @@ const AdminModuleModal: React.FC<AdminModuleModalProps> = ({
         name_zh: module.name_zh || '',
         url: module.url || '',
         icon: module.icon || '',
-        category: module.category || 'applications'
+        // FIX: Use enum member to ensure correct type assignment.
+        category: module.category || Category.Applications
       });
     } else {
       setFormData({
@@ -73,7 +76,8 @@ const AdminModuleModal: React.FC<AdminModuleModalProps> = ({
         name_zh: '',
         url: '',
         icon: '',
-        category: 'applications'
+        // FIX: Use enum member to ensure correct type assignment.
+        category: Category.Applications
       });
     }
     setErrors({});

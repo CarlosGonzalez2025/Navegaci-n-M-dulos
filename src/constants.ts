@@ -50,7 +50,8 @@ export const translations = {
     filterUsers: 'Filtrar usuarios',
     
     // Roles de usuario
-    admin: 'Administrador',
+    // FIX: Renamed 'admin' to 'roleAdmin' to avoid conflict with navigation 'admin' key.
+    roleAdmin: 'Administrador',
     coordinator: 'Coordinador',
     sst_specialist: 'Especialista SST',
     nurse: 'Enfermería',
@@ -163,7 +164,8 @@ export const translations = {
     filterUsers: 'Filter users',
     
     // User roles
-    admin: 'Administrator',
+    // FIX: Renamed 'admin' to 'roleAdmin' to avoid conflict with navigation 'admin' key.
+    roleAdmin: 'Administrator',
     coordinator: 'Coordinator',
     sst_specialist: 'SST Specialist',
     nurse: 'Nurse',
@@ -276,7 +278,8 @@ export const translations = {
     filterUsers: '筛选用户',
     
     // 用户角色
-    admin: '管理员',
+    // FIX: Renamed 'admin' to 'roleAdmin' to avoid conflict with navigation 'admin' key.
+    roleAdmin: '管理员',
     coordinator: '协调员',
     sst_specialist: 'SST专家',
     nurse: '护士',
