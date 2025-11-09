@@ -2,6 +2,11 @@ import { Language } from './types';
 
 export const translations = {
   [Language.ES]: {
+    // Header
+    companyName: 'Sistema de Gestión Integrada',
+    welcomeMessage: 'Bienvenido al portal de aplicaciones',
+    logout: 'Cerrar sesión',
+    
     // Navegación
     applications: 'Aplicaciones',
     reports: 'Reportes',
@@ -41,6 +46,8 @@ export const translations = {
     userDepartment: 'Departamento',
     userPhone: 'Teléfono',
     userActive: 'Usuario activo',
+    searchUsers: 'Buscar usuarios...',
+    filterUsers: 'Filtrar usuarios',
     
     // Roles de usuario
     admin: 'Administrador',
@@ -108,6 +115,11 @@ export const translations = {
   },
   
   [Language.EN]: {
+    // Header
+    companyName: 'Integrated Management System',
+    welcomeMessage: 'Welcome to the application portal',
+    logout: 'Sign out',
+    
     // Navigation
     applications: 'Applications',
     reports: 'Reports',
@@ -147,6 +159,8 @@ export const translations = {
     userDepartment: 'Department',
     userPhone: 'Phone',
     userActive: 'Active user',
+    searchUsers: 'Search users...',
+    filterUsers: 'Filter users',
     
     // User roles
     admin: 'Administrator',
@@ -214,6 +228,11 @@ export const translations = {
   },
   
   [Language.ZH]: {
+    // 标题
+    companyName: '综合管理系统',
+    welcomeMessage: '欢迎使用应用程序门户',
+    logout: '登出',
+    
     // 导航
     applications: '应用程序',
     reports: '报告',
@@ -253,6 +272,8 @@ export const translations = {
     userDepartment: '部门',
     userPhone: '电话',
     userActive: '活跃用户',
+    searchUsers: '搜索用户...',
+    filterUsers: '筛选用户',
     
     // 用户角色
     admin: '管理员',

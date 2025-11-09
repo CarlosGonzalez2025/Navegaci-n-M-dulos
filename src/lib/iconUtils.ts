@@ -102,6 +102,93 @@ export const getSSTRecommendedIcons = () => {
   };
 };
 
+// Función para obtener icono recomendado basado en el nombre del módulo
+export const getSuggestedIconForModule = (moduleName: string): string => {
+  const lowerName = moduleName.toLowerCase();
+  
+  // Mapeo inteligente basado en palabras clave
+  const keywordMap: Record<string, string> = {
+    // Seguridad
+    'seguridad': 'ShieldCheckIcon',
+    'safety': 'ShieldCheckIcon',
+    'riesgo': 'ExclamationTriangleIcon',
+    'peligro': 'ExclamationTriangleIcon',
+    'hazard': 'ExclamationTriangleIcon',
+    
+    // Salud
+    'salud': 'HeartIcon',
+    'health': 'HeartIcon',
+    'medico': 'UserIcon',
+    'medical': 'UserIcon',
+    'emo': 'ClipboardDocumentCheckIcon',
+    'examen': 'ClipboardDocumentCheckIcon',
+    
+    // Personal
+    'empleado': 'UsersIcon',
+    'employee': 'UsersIcon',
+    'trabajador': 'UserIcon',
+    'worker': 'UserIcon',
+    'personal': 'UserGroupIcon',
+    'staff': 'UserGroupIcon',
+    'usuario': 'UserCircleIcon',
+    'user': 'UserCircleIcon',
+    
+    // Reportes
+    'reporte': 'DocumentTextIcon',
+    'report': 'DocumentTextIcon',
+    'estadistica': 'ChartBarIcon',
+    'statistics': 'ChartBarIcon',
+    'dashboard': 'PresentationChartBarIcon',
+    'tablero': 'PresentationChartBarIcon',
+    
+    // Administración
+    'admin': 'CogIcon',
+    'administracion': 'WrenchScrewdriverIcon',
+    'gestion': 'AdjustmentsHorizontalIcon',
+    'management': 'AdjustmentsHorizontalIcon',
+    'configuracion': 'CogIcon',
+    'settings': 'CogIcon',
+    
+    // Auditoría
+    'auditoria': 'MagnifyingGlassIcon',
+    'audit': 'MagnifyingGlassIcon',
+    'inspeccion': 'DocumentMagnifyingGlassIcon',
+    'inspection': 'DocumentMagnifyingGlassIcon',
+    
+    // Capacitación
+    'capacitacion': 'AcademicCapIcon',
+    'training': 'AcademicCapIcon',
+    'educacion': 'BookOpenIcon',
+    'education': 'BookOpenIcon',
+    
+    // Incidentes
+    'incidente': 'ExclamationCircleIcon',
+    'incident': 'ExclamationCircleIcon',
+    'accidente': 'ShieldExclamationIcon',
+    'accident': 'ShieldExclamationIcon',
+    
+    // Emergencias
+    'emergencia': 'ExclamationTriangleIcon',
+    'emergency': 'ExclamationTriangleIcon',
+    
+    // Empresa
+    'empresa': 'BuildingOfficeIcon',
+    'company': 'BuildingOfficeIcon',
+    'organizacion': 'BuildingOffice2Icon',
+    'organization': 'BuildingOffice2Icon'
+  };
+  
+  // Buscar coincidencias en el nombre del módulo
+  for (const [keyword, iconName] of Object.entries(keywordMap)) {
+    if (lowerName.includes(keyword)) {
+      return iconName;
+    }
+  }
+  
+  // Si no encuentra nada específico, devolver un icono genérico
+  return 'Squares2X2Icon';
+};
+
 // Función para mostrar todos los iconos (útil para desarrollo)
 export const logAllIcons = () => {
   const categorized = getCategorizedIcons();

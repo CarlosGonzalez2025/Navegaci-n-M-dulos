@@ -59,6 +59,26 @@ export interface UserProfile {
   updated_at: string;
 }
 
+// Tipos para AuthContext
+export interface Profile {
+  id: string;
+  name?: string;
+  role?: string;
+  company?: string;
+  department?: string;
+  phone?: string;
+  is_active?: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface AuthContextType {
+  user: any; // Supabase User type
+  profile: Profile | null;
+  loading: boolean;
+  logout: () => Promise<void>;
+}
+
 // Tipos para formularios
 export interface CreateUserData {
   email: string;
@@ -95,4 +115,11 @@ export interface UserStats {
   by_role: Record<UserRole, number>;
   by_company: Record<string, number>;
   recent_logins: number;
+}
+
+// Tipos para constants/translations
+export interface HeaderTranslations {
+  companyName: string;
+  welcomeMessage: string;
+  logout: string;
 }

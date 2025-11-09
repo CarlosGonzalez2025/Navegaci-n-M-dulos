@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import * as HeroIcons from '@heroicons/react/24/outline';
-import { getCategorizedIcons, getSuggestedIcons, getSSTRecommendedIcons, isValidIcon } from '../utils/iconUtils';
+import { getCategorizedIcons, getSuggestedIcons, getSSTRecommendedIcons } from '../lib/iconUtils';
 
 interface IconSelectorProps {
   selectedIcon: string | null;
