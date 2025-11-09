@@ -145,6 +145,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
     setIsModalOpen(false);
   };
 
+  // FUNCIÓN ACTUALIZADA CON ENFOQUE SIMPLIFICADO
   const handleSaveUser = async (userData: any) => {
     setIsOperationLoading(true);
     try {
@@ -164,23 +165,102 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
         
         if (error) throw error;
 
-        // La actualización de contraseña requeriría una función RPC separada si es necesaria
         if (userData.password) {
           console.warn("Password update via UI requires a separate RPC function for security.");
         }
       } else {
-        // Crear nuevo usuario llamando a la función de PostgreSQL
-        const { error } = await supabase.rpc('create_new_user', {
-          email: userData.email,
-          password: userData.password,
-          name: userData.name,
-          role: userData.role,
-          company: userData.company,
-          department: userData.department,
-          phone: userData.phone
-        });
+        // Para usuarios nuevos, usar el flujo de dos pasos
+        const instructions = `
+🔄 PROCESO DE CREACIÓN DE USUARIO (2 PASOS)
 
-        if (error) throw error;
+📧 PASO 1: Crear usuario en Supabase Authentication
+1. Se abrirá Supabase en una nueva pestaña
+2. Haz clic en "Add user"
+3. Ingresa estos datos:
+   • Email: ${userData.email}
+   • Password: ${userData.password}
+   • ✅ Marca "Auto Confirm User"
+4. Haz clic en "Create user"
+
+👤 PASO 2: Crear perfil automáticamente
+Después de crear el usuario, este sistema creará automáticamente el perfil.
+
+¿Quieres proceder?`;
+
+        const shouldProceed = confirm(instructions);
+        
+        if (!shouldProceed) {
+          return; // Usuario canceló
+        }
+
+        // Abrir Supabase en nueva pestaña
+        const supabaseProjectId = 'uorsdalprrserlainmpu';
+        window.open(`https://supabase.com/dashboard/project/${supabaseProjectId}/auth/users`, '_blank');
+        
+        // Copiar email al portapapeles
+        if (navigator.clipboard) {
+          try {
+            await navigator.clipboard.writeText(userData.email);
+            alert('📋 Email copiado al portapapeles');
+          } catch (err) {
+            console.log('No se pudo copiar al portapapeles');
+          }
+        }
+
+        // Esperar a que el usuario confirme que creó el usuario
+        const userCreated = confirm('¿Ya creaste el usuario en Supabase Authentication?\n\nHaz clic en "Aceptar" cuando hayas terminado el Paso 1.');
+        
+        if (!userCreated) {
+          alert('Proceso cancelado. Puedes intentar nuevamente cuando hayas creado el usuario.');
+          return;
+        }
+
+        // Intentar crear el perfil automáticamente
+        try {
+          const { data, error } = await supabase.rpc('create_profile_by_email', {
+            email: userData.email,
+            name: userData.name,
+            role: userData.role,
+            company: userData.company,
+            department: userData.department,
+            phone: userData.phone
+          });
+
+          if (error) {
+            throw new Error(`Error en RPC: ${error.message}`);
+          }
+
+          if (data && data.success === false) {
+            throw new Error(data.message);
+          }
+
+          alert('✅ ¡Usuario y perfil creados exitosamente!');
+
+        } catch (profileError: any) {
+          console.error('Error creating profile:', profileError);
+          
+          // Fallback: mostrar SQL manual
+          const fallbackSQL = `
+-- Si el perfil automático falló, ejecuta este SQL manualmente:
+
+INSERT INTO profiles (id, name, role, company, department, phone, is_active)
+SELECT id, '${userData.name}', '${userData.role}', '${userData.company}', '${userData.department || ''}', '${userData.phone || ''}', true
+FROM auth.users 
+WHERE email = '${userData.email}';`;
+
+          alert(`⚠️ Error al crear el perfil automáticamente: ${profileError.message}\n\nPor favor, ejecuta este SQL en el SQL Editor:\n\n${fallbackSQL}`);
+          
+          if (navigator.clipboard) {
+            try {
+              await navigator.clipboard.writeText(fallbackSQL);
+              alert('📋 SQL copiado al portapapeles');
+            } catch (err) {
+              console.log('No se pudo copiar el SQL');
+            }
+          }
+          
+          return; // No cerrar modal
+        }
       }
       
       await fetchUsers();
@@ -451,7 +531,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
           user={editingUser}
           isLoading={isOperationLoading}
           translations={translations}
-          canUpdatePassword={false} // Password changes should be handled via a separate secure mechanism
+          canUpdatePassword={false}
         />
       )}
 
