@@ -14,8 +14,6 @@ import UserModal from './UserModal';
 import ConfirmDeleteModal from './ConfirmDeleteModal';
 
 interface UserManagementProps {
-  // FIX: Expanded translations to include all keys needed by this component and its child UserModal.
-  // This resolves the missing properties error when passing translations to UserModal.
   translations: {
     users: string;
     addUser: string;
@@ -41,7 +39,6 @@ interface UserManagementProps {
     confirmDeleteMessage: string;
     deleteUserTitle: string;
     cancel: string;
-    // For UserModal
     editUser: string;
     userName: string;
     userEmail: string;
@@ -67,92 +64,51 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [deletingUser, setDeletingUser] = useState<User | null>(null);
   const [isOperationLoading, setIsOperationLoading] = useState(false);
-  const [canCreateUsers, setCanCreateUsers] = useState(false); // Track if Edge Function is available
-
-  // Función para llamar a Edge Functions usando el SDK de Supabase
-  const callEdgeFunction = useCallback(async (endpoint: string, body?: any) => {
-    const payload = body ? { endpoint, ...body } : { endpoint };
-
-    const { data, error } = await supabase.functions.invoke('manage-users', {
-      body: payload,
-    });
-
-    if (error) {
-      // Captura errores de red, autenticación, etc.
-      throw error;
-    }
-    
-    // La función puede devolver su propio error estructurado
-    if (data && data.error) {
-      throw new Error(data.error);
-    }
-
-    return data;
-  }, []);
-
-  // Fetch users - intenta usar Edge Function primero, luego fallback a profiles
+  
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      try {
-        // Intentar obtener usuarios desde Edge Function
-        const { users } = await callEdgeFunction('/list');
-        setUsers(users);
-        setCanCreateUsers(true); // Edge Function disponible
-        return;
-      } catch (edgeFunctionError) {
-        console.log('Edge Function not available, falling back to profiles table:', edgeFunctionError);
-        setCanCreateUsers(false);
-      }
-      
-      // Fallback: obtener solo desde profiles
       const { data, error } = await supabase
         .from('profiles')
-        .select('*')
+        .select(`
+          *,
+          user_auth_info:user_auth_info(email, last_sign_in_at)
+        `)
         .order('created_at', { ascending: false });
-      
+
       if (error) {
-        console.error('Error fetching users:', error);
-        setUsers([]);
-        return;
+        console.error('Error fetching profiles:', error);
+        throw error;
       }
-      
-      // Combinar con vista de auth si está disponible
-      const { data: authInfo } = await supabase
-        .from('user_auth_info')
-        .select('*');
-      
-      const formattedUsers: User[] = (data || []).map(profile => {
-        const auth = authInfo?.find(a => a.id === profile.id);
-        return {
-          id: profile.id,
-          email: auth?.email || `user_${profile.id.slice(0, 8)}@chec.com`,
-          name: profile.name || 'Sin nombre',
-          role: profile.role || 'employee',
-          company: profile.company || '',
-          department: profile.department || '',
-          phone: profile.phone || '',
-          is_active: profile.is_active !== false,
-          last_login: auth?.last_sign_in_at || profile.updated_at,
-          created_at: profile.created_at,
-          updated_at: profile.updated_at || profile.created_at
-        };
-      });
-      
+
+      // Supabase no soporta joins directos, así que manejamos la estructura devuelta
+      const formattedUsers: User[] = (data || []).map((profile: any) => ({
+        id: profile.id,
+        email: profile.user_auth_info?.email || `user_${profile.id.slice(0, 8)}@chec.com`,
+        name: profile.name || 'Sin nombre',
+        role: profile.role || 'employee',
+        company: profile.company || '',
+        department: profile.department || '',
+        phone: profile.phone || '',
+        is_active: profile.is_active !== false,
+        last_login: profile.user_auth_info?.last_sign_in_at || profile.updated_at,
+        created_at: profile.created_at,
+        updated_at: profile.updated_at || profile.created_at
+      }));
+
       setUsers(formattedUsers);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      console.error('Error in fetchUsers:', error);
       setUsers([]);
     } finally {
       setLoading(false);
     }
-  }, [callEdgeFunction]);
+  }, []);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
-  // Filtrar usuarios
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
       const matchesSearch = !searchTerm || 
@@ -168,7 +124,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
     });
   }, [users, searchTerm, filters]);
 
-  // Obtener valores únicos para filtros
   const uniqueRoles = useMemo(() => 
     [...new Set(users.map(user => user.role))],
     [users]
@@ -194,7 +149,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
     setIsOperationLoading(true);
     try {
       if (editingUser) {
-        // Actualizar usuario existente
+        // Actualizar perfil de usuario existente
         const { error } = await supabase
           .from('profiles')
           .update({
@@ -209,49 +164,34 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
         
         if (error) throw error;
 
-        // Si hay nueva contraseña y Edge Function disponible
-        if (userData.password && canCreateUsers) {
-          try {
-            await callEdgeFunction('/update-password', {
-              userId: editingUser.id,
-              newPassword: userData.password
-            });
-          } catch (error) {
-            console.error('Failed to update password:', error);
-            alert('Usuario actualizado, pero no se pudo cambiar la contraseña');
-          }
+        // La actualización de contraseña requeriría una función RPC separada si es necesaria
+        if (userData.password) {
+          console.warn("Password update via UI requires a separate RPC function for security.");
         }
       } else {
-        // Crear nuevo usuario
-        if (!canCreateUsers) {
-          throw new Error('La creación de usuarios requiere configurar Edge Functions en Supabase');
-        }
-
-        const result = await callEdgeFunction('/create', {
+        // Crear nuevo usuario llamando a la función de PostgreSQL
+        const { error } = await supabase.rpc('create_new_user', {
           email: userData.email,
           password: userData.password,
-          metadata: {
-            name: userData.name,
-            role: userData.role,
-            company: userData.company,
-            department: userData.department,
-            phone: userData.phone
-          }
+          name: userData.name,
+          role: userData.role,
+          company: userData.company,
+          department: userData.department,
+          phone: userData.phone
         });
 
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to create user');
-        }
+        if (error) throw error;
       }
       
       await fetchUsers();
       handleCloseModal();
     } catch (error: any) {
       console.error('Error saving user:', error);
-      const errorMessage = (error?.message && typeof error.message === 'string')
-        ? error.message
-        : JSON.stringify(error);
-      alert(`Error al guardar usuario: ${errorMessage}`);
+      let message = error?.message || JSON.stringify(error);
+      if (message === '{}') {
+        message = String(error);
+      }
+      alert(`Error al guardar usuario: ${message}`);
     } finally {
       setIsOperationLoading(false);
     }
@@ -260,27 +200,23 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
   const handleDeleteUser = async (userId: string) => {
     setIsOperationLoading(true);
     try {
-      if (canCreateUsers) {
-        // Usar Edge Function para desactivar
-        await callEdgeFunction('/delete', { userId });
-      } else {
-        // Fallback: desactivar usuario en profiles
-        const { error } = await supabase
-          .from('profiles')
-          .update({ is_active: false })
-          .eq('id', userId);
-        
-        if (error) throw error;
-      }
+      // Desactivar usuario directamente en la tabla de perfiles
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_active: false })
+        .eq('id', userId);
+      
+      if (error) throw error;
       
       await fetchUsers();
       setDeletingUser(null);
     } catch (error: any) {
       console.error('Error deleting user:', error);
-      const errorMessage = (error?.message && typeof error.message === 'string')
-        ? error.message
-        : JSON.stringify(error);
-      alert(`Error al eliminar usuario: ${errorMessage}`);
+      let message = error?.message || JSON.stringify(error);
+      if (message === '{}') {
+        message = String(error);
+      }
+      alert(`Error al eliminar usuario: ${message}`);
     } finally {
       setIsOperationLoading(false);
     }
@@ -288,7 +224,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
 
   const getRoleLabel = (role: UserRole) => {
     const roleMap: Record<UserRole, string> = {
-      // FIX: Use the renamed 'roleAdmin' key for consistency.
       'admin': translations.roleAdmin,
       'coordinator': translations.coordinator,
       'sst_specialist': translations.sst_specialist,
@@ -317,34 +252,12 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
           <h2 className="text-lg font-semibold text-gray-900">{translations.users}</h2>
           <button
             onClick={() => handleOpenModal()}
-            disabled={!canCreateUsers}
-            className={`inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors ${
-              canCreateUsers 
-                ? 'bg-blue-600 hover:bg-blue-700' 
-                : 'bg-gray-400 cursor-not-allowed'
-            }`}
-            title={!canCreateUsers ? "Configure Edge Functions para habilitar esta función" : undefined}
+            className="inline-flex items-center px-4 py-2 text-white rounded-lg transition-colors bg-blue-600 hover:bg-blue-700"
           >
             <PlusIcon className="h-5 w-5 mr-2" />
             {translations.addUser}
           </button>
         </div>
-        
-        {!canCreateUsers && (
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              Para habilitar la creación de usuarios, configura las Edge Functions en Supabase.
-              <a 
-                href="https://supabase.com/docs/guides/functions" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="ml-1 underline font-medium"
-              >
-                Ver documentación
-              </a>
-            </p>
-          </div>
-        )}
         
         {/* Estadísticas */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -538,7 +451,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
           user={editingUser}
           isLoading={isOperationLoading}
           translations={translations}
-          canUpdatePassword={canCreateUsers}
+          canUpdatePassword={false} // Password changes should be handled via a separate secure mechanism
         />
       )}
 

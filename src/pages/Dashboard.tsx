@@ -175,10 +175,11 @@ export default function Dashboard() {
       handleCloseModal();
     } catch (err: any) {
       console.error("Failed to save module", err);
-      const errorMessage = (err?.message && typeof err.message === 'string') 
-        ? err.message 
-        : JSON.stringify(err);
-      alert(`Error al guardar módulo: ${errorMessage}`);
+      let message = err?.message || JSON.stringify(err);
+      if (message === '{}') {
+        message = String(err);
+      }
+      alert(`Error al guardar módulo: ${message}`);
     } finally {
       setIsOperationLoading(false);
     }
@@ -212,10 +213,11 @@ export default function Dashboard() {
       setFavorites(prev => prev.filter(id => id !== moduleId));
     } catch (error: any) {
       console.error("Failed to delete module", error);
-      const errorMessage = (error?.message && typeof error.message === 'string')
-        ? error.message
-        : JSON.stringify(error);
-      alert(`Error al eliminar módulo: ${errorMessage}`);
+      let message = error?.message || JSON.stringify(error);
+      if (message === '{}') {
+        message = String(error);
+      }
+      alert(`Error al eliminar módulo: ${message}`);
     } finally {
       setIsOperationLoading(false);
       setDeletingModule(null);
