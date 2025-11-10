@@ -266,6 +266,29 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
     }
   };
 
+  // FIX: Define the handleDeleteUser function to handle user deletion.
+  const handleDeleteUser = async (userId: string) => {
+    setIsOperationLoading(true);
+    try {
+      // Assuming an RPC function `admin_delete_user` exists to securely handle user deletion.
+      const { error } = await supabase.rpc('admin_delete_user', { user_id_to_delete: userId });
+
+      if (error) {
+        console.error('Error deleting user:', error);
+        throw error;
+      }
+
+      alert('Usuario eliminado exitosamente.');
+      await fetchUsers(); // Refresh the user list
+    } catch (error: any) {
+      console.error('Failed to delete user:', error);
+      alert(`Error al eliminar el usuario: ${error.message}`);
+    } finally {
+      setIsOperationLoading(false);
+      setDeletingUser(null);
+    }
+  };
+
   const getRoleLabel = (role: UserRole) => {
     const roleMap: Record<UserRole, string> = {
       'admin': translations.roleAdmin,

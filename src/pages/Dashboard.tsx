@@ -325,10 +325,10 @@ export default function Dashboard() {
           </main>
           <footer className="text-center py-4 mt-4">
             <p className="text-xs text-gray-500">
-              {`© ${new Date().getFullYear()} China Harbour Engineering Company. ${currentTranslations.footerRights}`}
+              {`© 2025 China Harbour Engineering Company. ${currentTranslations.footerRights}`}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              {currentTranslations.footerDevelopedBy} <a href="https://www.datenova.io" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.datenova.io</a>
+              {currentTranslations.footerDevelopedBy} (<a href="https://www.datenova.io" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.datenova.io</a>)
             </p>
           </footer>
         </div>

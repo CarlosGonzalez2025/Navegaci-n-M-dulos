@@ -83,10 +83,10 @@ const LoginPage: React.FC = () => {
       </div>
       <footer className="text-center py-4 mt-8">
         <p className="text-xs text-gray-500">
-          &copy; {new Date().getFullYear()} China Harbour Engineering Company. All rights reserved.
+          &copy; 2025 China Harbour Engineering Company. All rights reserved.
         </p>
         <p className="text-xs text-gray-500 mt-1">
-          Developed by <a href="https://www.datenova.io" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.datenova.io</a>
+          Developed by AXA COLPATRIA - DATENOVA (<a href="https://www.datenova.io" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.datenova.io</a>)
         </p>
       </footer>
     </div>

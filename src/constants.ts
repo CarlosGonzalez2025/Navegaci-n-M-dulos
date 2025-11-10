@@ -3,7 +3,7 @@ import { Language } from './types';
 export const translations = {
   [Language.ES]: {
     // Header
-    companyName: 'Sistema de Gestión Integrada',
+    companyName: 'CHEC-COL-ONE',
     welcomeMessage: 'Bienvenido al portal de aplicaciones',
     logout: 'Cerrar sesión',
     changePassword: 'Cambiar contraseña',
@@ -122,12 +122,12 @@ export const translations = {
 
     // Footer
     footerRights: 'Todos los derechos reservados.',
-    footerDevelopedBy: 'Desarrollado por'
+    footerDevelopedBy: 'Desarrollado por AXA COLPATRIA - DATENOVA'
   },
   
   [Language.EN]: {
     // Header
-    companyName: 'Integrated Management System',
+    companyName: 'CHEC-COL-ONE',
     welcomeMessage: 'Welcome to the application portal',
     logout: 'Sign out',
     changePassword: 'Change Password',
@@ -246,12 +246,12 @@ export const translations = {
     
     // Footer
     footerRights: 'All rights reserved.',
-    footerDevelopedBy: 'Developed by'
+    footerDevelopedBy: 'Developed by AXA COLPATRIA - DATENOVA'
   },
   
   [Language.ZH]: {
     // 标题
-    companyName: '综合管理系统',
+    companyName: 'CHEC-COL-ONE',
     welcomeMessage: '欢迎使用应用程序门户',
     logout: '登出',
     changePassword: '更改密码',
@@ -370,6 +370,6 @@ export const translations = {
     
     // Footer
     footerRights: '版权所有.',
-    footerDevelopedBy: '开发者'
+    footerDevelopedBy: '由 AXA COLPATRIA - DATENOVA 开发'
   }
 };
