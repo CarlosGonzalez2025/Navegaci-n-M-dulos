@@ -86,7 +86,7 @@ const LoginPage: React.FC = () => {
           &copy; 2025 China Harbour Engineering Company. All rights reserved.
         </p>
         <p className="text-xs text-gray-500 mt-1">
-          Developed by AXA COLPATRIA - DATENOVA (<a href="https://www.datenova.io" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.datenova.io</a>)
+          Developed by AXA COLPATRIA - DATENOVA <a href=" " target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline"></a>
         </p>
       </footer>
     </div>

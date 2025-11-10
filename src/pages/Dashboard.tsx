@@ -328,7 +328,7 @@ export default function Dashboard() {
               {`© 2025 China Harbour Engineering Company. ${currentTranslations.footerRights}`}
             </p>
             <p className="text-xs text-gray-500 mt-1">
-              {currentTranslations.footerDevelopedBy} (<a href="https://www.datenova.io" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">www.datenova.io</a>)
+              {currentTranslations.footerDevelopedBy} <a href="" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline"></a>
             </p>
           </footer>
         </div>
