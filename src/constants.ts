@@ -122,7 +122,7 @@ export const translations = {
 
     // Footer
     footerRights: 'Todos los derechos reservados.',
-    footerDevelopedBy: 'Desarrollado por AXA COLPATRIA - DATENOVA'
+    footerDevelopedBy: 'Desarrollado por AXA COLPATRIA'
   },
   
   [Language.EN]: {
