@@ -246,7 +246,7 @@ export const translations = {
     
     // Footer
     footerRights: 'All rights reserved.',
-    footerDevelopedBy: 'Developed by AXA COLPATRIA - DATENOVA'
+    footerDevelopedBy: 'Developed by AXA COLPATRIA'
   },
   
   [Language.ZH]: {
@@ -370,6 +370,6 @@ export const translations = {
     
     // Footer
     footerRights: '版权所有.',
-    footerDevelopedBy: '由 AXA COLPATRIA - DATENOVA 开发'
+    footerDevelopedBy: '由 AXA COLPATRIA'
   }
 };
