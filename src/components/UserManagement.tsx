@@ -144,8 +144,6 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
     setIsModalOpen(false);
   };
 
-// FUNCIÓN ACTUALIZADA CON NUEVOS NOMBRES DE PARÁMETROS
-  // FUNCIÓN SIMPLIFICADA Y MÁS PERMISIVA
   const handleSaveUser = async (userData: any) => {
     setIsOperationLoading(true);
     try {
@@ -165,14 +163,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
         
         if (error) {
           console.error('Error updating user:', error);
-          throw new Error(`Error al actualizar: ${error.message}`);
+          throw error; // Lanzar error para que el catch lo maneje
         }
 
         alert('✅ Usuario actualizado exitosamente');
       } else {
-        // Crear nuevo usuario - logs detallados para debugging
+        // Crear nuevo usuario
         console.log('=== INICIANDO CREACIÓN DE USUARIO ===');
-        console.log('Datos del formulario:', userData);
         
         // Preparar datos limpios
         const cleanUserData = {
@@ -186,28 +183,28 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
         };
         
         console.log('Datos limpiados para RPC:', cleanUserData);
-        
+
         // Validación básica en frontend
         if (!cleanUserData.user_email || !cleanUserData.user_password || !cleanUserData.user_name) {
           throw new Error('Por favor completa todos los campos obligatorios (email, contraseña, nombre)');
         }
 
         const { data, error } = await supabase.rpc('admin_create_user', cleanUserData);
-
         console.log('=== RESPUESTA DE SUPABASE ===');
         console.log('Data:', data);
         console.log('Error:', error);
 
-        // Manejar errores de Supabase
+        // Manejar errores de Supabase (nivel de conexión/permisos)
         if (error) {
           console.error('Error de Supabase:', error);
-          throw new Error(`Error de conexión: ${error.message}`);
+          throw error; 
         }
 
-        // Manejar respuesta de la función
+        // Manejar respuesta lógica de la función (si la función captura el error internamente y devuelve json)
         if (data) {
           if (data.success === false) {
-            console.error('Error de función:', data);
+            console.error('Error reportado por la función:', data);
+            // Lanzar el mensaje como error para unificar el manejo en el catch
             throw new Error(data.message || 'Error desconocido en la función');
           }
           
@@ -219,7 +216,7 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
                   `Rol: ${data.role}\n` +
                   `Empresa: ${data.company}`);
           } else {
-            // Respuesta inesperada
+            // Respuesta inesperada (no tiene success true/false)
             console.warn('Respuesta inesperada:', data);
             alert('⚠️ Usuario creado, pero con respuesta inesperada. Verifica la lista de usuarios.');
           }
@@ -236,41 +233,51 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
       handleCloseModal();
       
     } catch (error: any) {
-      console.error('=== ERROR COMPLETO ===');
-      console.error('Error object:', error);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
+      console.error('=== ERROR COMPLETO ===', error);
       
       let userMessage = 'Error desconocido';
+      const errorMessageString = typeof error === 'string' ? error : error.message || JSON.stringify(error);
       
-      if (error.message) {
-        userMessage = error.message;
-      } else if (typeof error === 'string') {
-        userMessage = error;
+      // Detección específica de errores
+      if (error.code === '42501' || errorMessageString.includes('permission denied')) {
+        userMessage = '⛔ Error de Permisos (42501): La función "admin_create_user" no tiene permisos SECURITY DEFINER.';
+        alert(`❌ Error de Permisos:\n\nLa función en base de datos necesita permisos de superusuario.\n\nSOLUCIÓN SQL:\nALTER FUNCTION admin_create_user SECURITY DEFINER;`);
+        return;
+      } 
+      else if (errorMessageString.includes('profiles_pkey') || errorMessageString.includes('duplicate key')) {
+        userMessage = '⛔ Conflicto de Creación (Trigger vs Función)';
+        alert(
+          `❌ Error de Conflicto en Base de Datos:\n\n` +
+          `El sistema intentó crear el perfil dos veces (Trigger automático + Función manual).\n\n` +
+          `SOLUCIÓN SQL (Recrea la función con ON CONFLICT):\n` +
+          `INSERT INTO public.profiles (...) VALUES (...) \nON CONFLICT (id) DO UPDATE SET ...`
+        );
+        return;
       }
-      
-      // Mensajes más amigables para errores comunes
-      if (userMessage.includes('check constraint')) {
-        userMessage = 'Error de validación en la base de datos. Por favor ejecuta el script de corrección.';
-      } else if (userMessage.includes('does not exist')) {
-        userMessage = 'La función de creación no está configurada. Ejecuta el script SQL proporcionado.';
-      } else if (userMessage.includes('Ya existe un usuario')) {
-        userMessage = 'Ya existe un usuario con este email. Usa un email diferente.';
-      } else if (userMessage.includes('no autenticado')) {
-        userMessage = 'Tu sesión expiró. Por favor inicia sesión nuevamente.';
+      else if (errorMessageString.includes('check constraint')) {
+        userMessage = 'Error de validación en la base de datos. Verifica los datos enviados.';
+      } 
+      else if (errorMessageString.includes('does not exist') || error.code === '42883') {
+        userMessage = 'La función `admin_create_user` no existe en la base de datos.';
+      } 
+      else if (errorMessageString.includes('Ya existe un usuario')) {
+        userMessage = 'Ya existe un usuario con este email en el sistema de autenticación.';
+      }
+      else {
+        userMessage = errorMessageString;
       }
 
-      alert(`❌ Error al crear usuario:\n\n${userMessage}\n\nRevisa la consola para más detalles.`);
+      alert(`❌ Error al guardar usuario:\n\n${userMessage}`);
+
     } finally {
       setIsOperationLoading(false);
     }
   };
 
-  // FIX: Define the handleDeleteUser function to handle user deletion.
   const handleDeleteUser = async (userId: string) => {
     setIsOperationLoading(true);
     try {
-      // Assuming an RPC function `admin_delete_user` exists to securely handle user deletion.
+      console.log('Deleting user with ID:', userId);
       const { error } = await supabase.rpc('admin_delete_user', { user_id_to_delete: userId });
 
       if (error) {
@@ -282,7 +289,13 @@ const UserManagement: React.FC<UserManagementProps> = ({ translations }) => {
       await fetchUsers(); // Refresh the user list
     } catch (error: any) {
       console.error('Failed to delete user:', error);
-      alert(`Error al eliminar el usuario: ${error.message}`);
+      
+      let errorMessage = error.message || 'Error desconocido';
+      if (error.code === '42501' || errorMessage.toLowerCase().includes('permission denied')) {
+          errorMessage = 'Error de permisos (42501). La función `admin_delete_user` necesita el permiso SECURITY DEFINER.';
+      }
+      
+      alert(`Error al eliminar el usuario: ${errorMessage}`);
     } finally {
       setIsOperationLoading(false);
       setDeletingUser(null);
